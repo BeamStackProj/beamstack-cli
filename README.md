@@ -18,7 +18,7 @@ Kubernetes while unlocking the immense potential of ML.
 
 ## To start using Beamflow
 
-Basic to advance knowledge on kubernetes is advised. 
+Basic to advanced knowledge on kubernetes is advised. 
 
 ## Installing Beamflow
 
