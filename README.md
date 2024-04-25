@@ -1,5 +1,7 @@
 # Beamflow
 
+<img src="https://github.com/Beamflow/beamflow-cli/blob/main/logo/logo.png" width="100">
+
 ----
 
 Beamflow is a revolutionary tool that has been meticulously crafted to simplify and revolutionize 
