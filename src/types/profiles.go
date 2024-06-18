@@ -1,14 +1,18 @@
 package types
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
+	"time"
 )
+
+type TimeStamp struct {
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
 
 type OperatorDetails struct {
 	Version   string `json:"version"`
-	IsDefault bool   `json:"isDefault"`
+	IsDefault bool   `json:"isDefault,omitempty"`
 }
 
 type Operator struct {
@@ -17,17 +21,23 @@ type Operator struct {
 }
 
 type Monitoring struct {
-	Server struct{
-		Name: string `json:"name"`
-		Version: string `json:"version,omitempty"`
-		Url: string `json:"url"`
-	}, `json:"server"`
+	Server struct {
+		Name    string `json:"name"`
+		Version string `json:"version,omitempty"`
+		Url     string `json:"url"`
+	} `json:"server"`
+}
+
+type Package struct {
+	Name    string `json:"name"`
+	Version string `json:"version,omitempty"`
 }
 
 type Profiles struct {
-	Name      	string   	`json:"name"`
-	Operators 	Operator 	`json:"defaultOperator"`
-	Monitoring 	Monitoring	`json:"monitoring,omitempty"`
+	Name       string      `json:"name"`
+	Operators  Operator    `json:"operators"`
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
+	Packages   []Package   `json:"packages"`
 }
 
 // Validate method to ensure only one operator is default, or none if Operators is nil

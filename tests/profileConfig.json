@@ -1,0 +1,19 @@
+{
+	"name": "json-config-test",
+	"operators": {
+		"flink": {
+			"version": "5.1.3",
+			"isDefault": true
+		},
+		"spark": {
+			"version": "7.12.0"
+		}
+	},
+	"monitoring": {
+		"server": {
+			"name": "grafana",
+			"version": "2.1.4",
+			"url": "localhost:5001/logs"
+		}
+	}
+}

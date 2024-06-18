@@ -1,0 +1,12 @@
+name: yaml-config-test
+operators:
+    flink:
+        version: 12.4.1
+        isDefault: true
+    spark:
+        version: 1.5.6
+monitoring:
+    server:
+        name: prometheus
+        version: 1.2.3
+        url: localhost:5000/logs
