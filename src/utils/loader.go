@@ -78,3 +78,24 @@ func parseJSON(filePath string, profile *types.Profiles) error {
 
 	return nil
 }
+
+func SaveProfile(profile *types.Profiles) error {
+
+	jsonData, err := json.MarshalIndent(profile, "", "    ")
+	if err != nil {
+		return fmt.Errorf("Error marshaling config to JSON, %s", err)
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("could not locate home directory %s", err)
+	}
+
+	fileName := filepath.Join(homeDir, ".beamstack", "profiles", fmt.Sprintf("%s.json", profile.Name))
+	// Write the JSON data to a file
+	err = os.WriteFile(fileName, jsonData, 0644)
+	if err != nil {
+		return fmt.Errorf("Error writing profile file, %s", err)
+	}
+	return nil
+}

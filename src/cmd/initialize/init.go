@@ -6,6 +6,7 @@ import (
 
 	"github.com/Beamflow/beamflow-cli/src/types"
 	"github.com/Beamflow/beamflow-cli/src/utils"
+	"github.com/Beamflow/beamflow-cli/src/utils/objects"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -28,6 +29,7 @@ var (
 	Flink           bool   = false
 	Spark           bool   = false
 	operators       types.Operator
+	force           bool = false
 )
 
 func init() {
@@ -39,6 +41,7 @@ func init() {
 	InitCmd.Flags().StringVarP(&SparkVersion, "spark-version", "s", SparkVersion, "Spark Version to be installed. Ignored if Spark is not specified for installation.")
 	InitCmd.Flags().BoolVarP(&Flink, "flink", "F", Flink, "If specified, flink is installed.")
 	InitCmd.Flags().BoolVarP(&Spark, "spark", "S", Spark, "If specified, Spark is installed.")
+	InitCmd.Flags().BoolVarP(&force, "force", "q", force, "If specified, will automatically reinitialize cluster")
 }
 
 func runInit(cmd *cobra.Command, args []string) {
@@ -50,7 +53,7 @@ func runInit(cmd *cobra.Command, args []string) {
 	}
 	contextsStringMap := viper.GetStringMapString("contexts")
 
-	if _, ok := contextsStringMap[currentContext]; ok {
+	if _, ok := contextsStringMap[currentContext]; ok && !force {
 		fmt.Println("Current cluster already initialized")
 		fmt.Print("Do you want reinitialize? (Y/N) ")
 
@@ -120,6 +123,7 @@ func runInit(cmd *cobra.Command, args []string) {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			return
 		}
+
 	}
 
 	contextsStringMap[currentContext] = Profile.Name
@@ -128,6 +132,23 @@ func runInit(cmd *cobra.Command, args []string) {
 
 	if err := viper.WriteConfig(); err != nil {
 		fmt.Printf("Error writing config file: %v\n", err)
+	}
+
+	fmt.Println("installing cert manager crds")
+
+	if err := objects.CreateObject("https://github.com/jetstack/cert-manager/releases/download/v1.8.2/cert-manager.yaml"); err != nil {
+		fmt.Printf("could not install cert manager: \n%s\n", err)
+		return
+	}
+
+	fmt.Println("installing flink operator")
+	utils.InstallHelmPackage("flink-kubernetes-operator", "https://downloads.apache.org/flink/flink-kubernetes-operator-1.8.0/")
+
+	// save profile : after all configs have been update!
+	err = utils.SaveProfile(&Profile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return
 	}
 
 }

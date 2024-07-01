@@ -25,7 +25,7 @@ install: go-build
 	@sudo mkdir ~/.$(BINARY_NAME)/profiles -p
 	@sudo cp ./tests/config.json ~/.$(BINARY_NAME)/config/config.json
 	@sudo mv $(SOURCE_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
-	@chmod -R 755 ~/.$(BINARY_NAME)
+	@sudo chmod -R 777 ~/.$(BINARY_NAME)
 	@echo "✅ $(BINARY_NAME) installed..!"
 	@echo
 	make clean
@@ -36,5 +36,4 @@ uninstall:
 	@sudo rm -f /usr/local/bin/$(BINARY_NAME)
 	@sudo rm -rf ~/.$(BINARY_NAME)
 	@echo "✅ $(BINARY_NAME) Uninstalled..!"
-
 

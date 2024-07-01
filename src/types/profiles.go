@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type TimeStamp struct {
+type Timestamp struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -31,6 +31,7 @@ type Monitoring struct {
 type Package struct {
 	Name    string `json:"name"`
 	Version string `json:"version,omitempty"`
+	*Timestamp
 }
 
 type Profiles struct {
