@@ -95,6 +95,7 @@ func applyYAML(dynamicClient dynamic.Interface, path string) error {
 		} else if err != nil {
 			return err
 		} else {
+			return nil //TODO: fix patch bug
 			// Update the resource
 			existingJSON, err := json.Marshal(existing.Object)
 			if err != nil {
@@ -109,8 +110,6 @@ func applyYAML(dynamicClient dynamic.Interface, path string) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(obj)
-			fmt.Println(patch)
 			_, err = resourceClient.Patch(context.Background(), obj.GetName(), types.StrategicMergePatchType, patch, v1.PatchOptions{})
 			if err != nil {
 				return err

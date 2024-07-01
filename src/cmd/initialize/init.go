@@ -3,6 +3,7 @@ package initialize
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/BeamStackProj/beamstack-cli/src/types"
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
@@ -23,7 +24,7 @@ var (
 	ConfigFile      string = ""
 	Name            string = ""
 	DefaultOperator string = "flink"
-	FlinkVersion    string = "latest"
+	FlinkVersion    string = "1.8.0"
 	SparkVersion    string = "latest"
 	monitoring      bool   = false
 	Flink           bool   = false
@@ -140,11 +141,15 @@ func runInit(cmd *cobra.Command, args []string) {
 		fmt.Printf("could not install cert manager: \n%s\n", err)
 		return
 	}
+	fmt.Println("Sleeping for 2 mins to let the cert manager install correctly")
+	time.Sleep(time.Minute * 2) // sleeping for  2 minutes to let the cert manager install. will update this to check the status of the deployment
 
-	fmt.Println("installing flink operator")
-	utils.InstallHelmPackage("flink-kubernetes-operator", "https://downloads.apache.org/flink/flink-kubernetes-operator-1.8.0/")
-
+	if Flink {
+		fmt.Println("installing flink operator")
+		utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion))
+	}
 	// save profile : after all configs have been update!
+
 	err = utils.SaveProfile(&Profile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
