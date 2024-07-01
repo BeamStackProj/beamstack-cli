@@ -6,8 +6,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/Beamflow/beamflow-cli/src/types"
-	"github.com/Beamflow/beamflow-cli/src/utils"
+	"github.com/BeamStackProj/beamstack-cli/src/types"
+	"github.com/BeamStackProj/beamstack-cli/src/utils"
 )
 
 func Health() (types.ClusterHealth, error) {

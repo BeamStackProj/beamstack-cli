@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/Beamflow/beamflow-cli/src/utils"
+	"github.com/BeamStackProj/beamstack-cli/src/utils"
 )
 
 func CreateObject(path string) error {

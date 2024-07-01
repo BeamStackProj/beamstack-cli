@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Beamflow/beamflow-cli/src/types"
+	"github.com/BeamStackProj/beamstack-cli/src/types"
 	"gopkg.in/yaml.v2"
 )
 

@@ -6,10 +6,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/Beamflow/beamflow-cli/src/cmd/deploy"
-	"github.com/Beamflow/beamflow-cli/src/cmd/info"
-	"github.com/Beamflow/beamflow-cli/src/cmd/initialize"
-	"github.com/Beamflow/beamflow-cli/src/utils"
+	"github.com/BeamStackProj/beamstack-cli/src/cmd/deploy"
+	"github.com/BeamStackProj/beamstack-cli/src/cmd/info"
+	"github.com/BeamStackProj/beamstack-cli/src/cmd/initialize"
+	"github.com/BeamStackProj/beamstack-cli/src/utils"
 	"github.com/spf13/cobra"
 )
 

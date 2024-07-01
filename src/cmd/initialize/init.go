@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Beamflow/beamflow-cli/src/types"
-	"github.com/Beamflow/beamflow-cli/src/utils"
-	"github.com/Beamflow/beamflow-cli/src/utils/objects"
+	"github.com/BeamStackProj/beamstack-cli/src/types"
+	"github.com/BeamStackProj/beamstack-cli/src/utils"
+	"github.com/BeamStackProj/beamstack-cli/src/utils/objects"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
