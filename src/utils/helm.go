@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/BeamStackProj/beamstack-cli/src/types"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
@@ -11,12 +12,18 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 )
 
-func InstallHelmPackage(name string, url string) {
-
+func InstallHelmPackage(name string, url string, version string) (helmPackage types.Package) {
 	// Set up Helm action configuration
+	helmPackage = types.Package{
+		Name:    name,
+		Url:     url,
+		Version: version,
+		Type:    "helm",
+	}
+
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(cli.New().RESTClientGetter(), "default", os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
-		fmt.Sprintf(format, v...)
+		fmt.Printf(format, v...)
 	}); err != nil {
 		panic(err.Error())
 	}
@@ -55,7 +62,17 @@ func InstallHelmPackage(name string, url string) {
 	if err != nil {
 		panic(err.Error())
 	}
-
+	fmt.Println(len(chart.CRDObjects()))
+	for _, crd := range chart.CRDObjects() {
+		helmPackage.Dependencies = append(helmPackage.Dependencies, &types.Package{
+			Name:    crd.Name,
+			Url:     crd.Filename,
+			Type:    "k8s.crd",
+			Version: crd.File.Name,
+		})
+		fmt.Println(crd.Filename)
+		fmt.Println(crd.Name)
+	}
 	delete := action.NewUninstall(actionConfig)
 	deletedrelease, _ := delete.Run(name)
 	if deletedrelease != nil {
@@ -66,6 +83,5 @@ func InstallHelmPackage(name string, url string) {
 	if err != nil {
 		panic(err.Error())
 	}
-
-	fmt.Printf("%s Operator installed successfully\n", name)
+	return
 }

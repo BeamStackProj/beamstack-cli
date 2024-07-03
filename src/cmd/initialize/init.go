@@ -3,7 +3,6 @@ package initialize
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/BeamStackProj/beamstack-cli/src/types"
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
@@ -31,6 +30,8 @@ var (
 	Spark           bool   = false
 	operators       types.Operator
 	force           bool = false
+	totalOps        int  = 4
+	currentOp       int  = 1
 )
 
 func init() {
@@ -56,7 +57,7 @@ func runInit(cmd *cobra.Command, args []string) {
 
 	if _, ok := contextsStringMap[currentContext]; ok && !force {
 		fmt.Println("Current cluster already initialized")
-		fmt.Print("Do you want reinitialize? (Y/N) ")
+		fmt.Print("Do you want reinitialize? (y/n) ")
 
 		var userInput string
 		_, err := fmt.Scanln(&userInput)
@@ -141,12 +142,43 @@ func runInit(cmd *cobra.Command, args []string) {
 		fmt.Printf("could not install cert manager: \n%s\n", err)
 		return
 	}
-	fmt.Println("Sleeping for 2 mins to let the cert manager install correctly")
-	time.Sleep(time.Minute * 2) // sleeping for  2 minutes to let the cert manager install. will update this to check the status of the deployment
+
+	progChan := make(chan types.ProgCount)
+	go objects.HandleResource("CustomResourceDefinition", "", "Established", progChan)
+	utils.DisplayProgress(progChan, "deploying crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
+	currentOp += 1
+
+	progChan = make(chan types.ProgCount)
+	go objects.HandleResource("Deployment", "cert-manager", "Available", progChan)
+	utils.DisplayProgress(progChan, "creating deployments", fmt.Sprintf("%d/%d", currentOp, totalOps))
+	currentOp += 1
+
+	Profile.Packages = append(Profile.Packages, types.Package{
+		Name:    "cert-manager",
+		Url:     "https://github.com/jetstack/cert-manager/releases/download/v1.8.2/cert-manager.yaml",
+		Type:    "k8s",
+		Version: "1.8.2",
+	})
 
 	if Flink {
-		fmt.Println("installing flink operator")
-		utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion))
+		fmt.Println("\ninstalling flink operator")
+		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion)
+
+		progChan := make(chan types.ProgCount)
+		go objects.HandleResource("CustomResourceDefinition", "", "Established", progChan)
+		utils.DisplayProgress(progChan, "installing flink", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		currentOp += 1
+
+		progChan = make(chan types.ProgCount)
+		go objects.HandleResource("Deployment", "default", "Available", progChan)
+		utils.DisplayProgress(progChan, "creating flink deploymens", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		currentOp += 1
+
+		Profile.Packages = append(Profile.Packages, helmPackage)
+	}
+
+	if monitoring {
+
 	}
 	// save profile : after all configs have been update!
 

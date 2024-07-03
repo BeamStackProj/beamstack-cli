@@ -18,8 +18,16 @@ clean:
 	@rm -f $(SOURCE_DIR)/$(BINARY_NAME)
 	@echo
 
+.PHONY: uninstall
+uninstall:
+	@echo "🧹 Uninstalling !"
+	@sudo rm -f /usr/local/bin/$(BINARY_NAME)
+	@sudo rm -rf ~/.$(BINARY_NAME)
+	@echo "✅ $(BINARY_NAME) Uninstalled..!"
+
+
 .PHONY: install
-install: go-build
+install: uninstall go-build
 	@sudo mkdir ~/.$(BINARY_NAME) -p
 	@sudo mkdir ~/.$(BINARY_NAME)/config -p
 	@sudo mkdir ~/.$(BINARY_NAME)/profiles -p
@@ -29,11 +37,3 @@ install: go-build
 	@echo "✅ $(BINARY_NAME) installed..!"
 	@echo
 	make clean
-
-.PHONY: uninstall
-uninstall:
-	@echo "🧹 Uninstalling !"
-	@sudo rm -f /usr/local/bin/$(BINARY_NAME)
-	@sudo rm -rf ~/.$(BINARY_NAME)
-	@echo "✅ $(BINARY_NAME) Uninstalled..!"
-

@@ -29,10 +29,20 @@ type Monitoring struct {
 }
 
 type Package struct {
-	Name    string `json:"name"`
-	Version string `json:"version,omitempty"`
+	Name         string     `json:"name"`
+	Type         string     `json:"type,omitempty"`
+	Version      string     `json:"version,omitempty"`
+	Dependencies []*Package `json:"dependencies,omitempty"`
+	Url          string     `json:"url,omitempty"`
 	*Timestamp
 }
+
+// type PackageDependencies struct {
+// 	Name    string `json:"Name"`
+// 	Type    string `json:"type,omitempty"`
+// 	Version string `json:"version,omitempty"`
+// 	Url     string `json:"url,omitempty"`
+// }
 
 type Profiles struct {
 	Name       string      `json:"name"`
