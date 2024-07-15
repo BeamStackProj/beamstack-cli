@@ -5,14 +5,12 @@ CWD:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 GOCMD=go
 GOBUILD=$(GOCMD) build
 SOURCE_DIR=./src
-BINARY_NAME=beamflow
+BINARY_NAME=beamstack
 
 .PHONY: go-build
 go-build:
 	@echo "running go build ..."
 	@cd $(SOURCE_DIR) && $(GOBUILD) -o $(BINARY_NAME) -v
-	@sudo mv $(SOURCE_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
-	@echo
 
 .PHONY: clean
 clean:
@@ -20,7 +18,22 @@ clean:
 	@rm -f $(SOURCE_DIR)/$(BINARY_NAME)
 	@echo
 
-.PHONY: install
-install: go-build clean
-	@echo "✅ $(BINARY_NAME) installed..!"
+.PHONY: uninstall
+uninstall:
+	@echo "🧹 Uninstalling !"
+	@sudo rm -f /usr/local/bin/$(BINARY_NAME)
+	@sudo rm -rf ~/.$(BINARY_NAME)
+	@echo "✅ $(BINARY_NAME) Uninstalled..!"
 
+
+.PHONY: install
+install: uninstall go-build
+	@sudo mkdir ~/.$(BINARY_NAME) -p
+	@sudo mkdir ~/.$(BINARY_NAME)/config -p
+	@sudo mkdir ~/.$(BINARY_NAME)/profiles -p
+	@sudo cp ./tests/config.json ~/.$(BINARY_NAME)/config/config.json
+	@sudo mv $(SOURCE_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
+	@sudo chmod -R 777 ~/.$(BINARY_NAME)
+	@echo "✅ $(BINARY_NAME) installed..!"
+	@echo
+	make clean

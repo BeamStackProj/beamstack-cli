@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	info_handler "github.com/Beamflow/beamflow-cli/src/handlers/info"
+	info_handler "github.com/BeamStackProj/beamstack-cli/src/handlers/info"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 )
