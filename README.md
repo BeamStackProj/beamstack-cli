@@ -1,7 +1,4 @@
 # beamstack
-
-<img src="https://github.com/BeamStackProj/beamstack-cli/blob/main/logo/logo.png" width="100">
-
 ----
 
 beamstack is a revolutionary tool that has been meticulously crafted to simplify and revolutionize 
