@@ -36,7 +36,7 @@ func DisplayProgress(progChan chan types.ProgCount, taskDesc string, taskCount s
 			} else {
 				i.Count = i.Count * 10
 			}
-			bar = ProgressBar(taskDesc, taskCount, i.Count)
+			bar = ProgressBar(taskDesc, taskCount, i.Count+10)
 		} else {
 			err := bar.Add(10)
 			if err != nil {
@@ -44,5 +44,6 @@ func DisplayProgress(progChan chan types.ProgCount, taskDesc string, taskCount s
 			}
 		}
 	}
+	bar.Add(10)
 	fmt.Println()
 }

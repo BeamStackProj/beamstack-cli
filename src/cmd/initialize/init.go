@@ -30,7 +30,7 @@ var (
 	Spark           bool   = false
 	operators       types.Operator
 	force           bool = false
-	totalOps        int  = 4
+	totalOps        int  = 6
 	currentOp       int  = 1
 )
 
@@ -44,6 +44,7 @@ func init() {
 	InitCmd.Flags().BoolVarP(&Flink, "flink", "F", Flink, "If specified, flink is installed.")
 	InitCmd.Flags().BoolVarP(&Spark, "spark", "S", Spark, "If specified, Spark is installed.")
 	InitCmd.Flags().BoolVarP(&force, "force", "q", force, "If specified, will automatically reinitialize cluster")
+	InitCmd.Flags().BoolVarP(&monitoring, "monitoring", "m", monitoring, "If specified, install kube prometheus + grafana stack")
 }
 
 func runInit(cmd *cobra.Command, args []string) {
@@ -120,7 +121,7 @@ func runInit(cmd *cobra.Command, args []string) {
 		}
 
 	} else {
-		Profile, err = utils.GetProfile(ConfigFile)
+		Profile, err = utils.LoadProfileFromConfig(ConfigFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			return
@@ -161,8 +162,15 @@ func runInit(cmd *cobra.Command, args []string) {
 	})
 
 	if Flink {
+		if err := objects.CreateNamespace("flink-operator"); err != nil {
+			if err != os.ErrExist {
+				fmt.Println(err)
+			}
+			// handler error?...
+		}
+
 		fmt.Println("\ninstalling flink operator")
-		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion)
+		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion, "flink-operator", &map[string]interface{}{})
 
 		progChan := make(chan types.ProgCount)
 		go objects.HandleResource("CustomResourceDefinition", "", "Established", progChan)
@@ -170,7 +178,7 @@ func runInit(cmd *cobra.Command, args []string) {
 		currentOp += 1
 
 		progChan = make(chan types.ProgCount)
-		go objects.HandleResource("Deployment", "default", "Available", progChan)
+		go objects.HandleResource("Deployment", "flink-operator", "Available", progChan)
 		utils.DisplayProgress(progChan, "creating flink deploymens", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
@@ -178,9 +186,62 @@ func runInit(cmd *cobra.Command, args []string) {
 	}
 
 	if monitoring {
+		var namespace string = "monitoring"
+		if err := objects.CreateNamespace(namespace); err != nil {
+			if err != os.ErrExist {
+				fmt.Println(err)
+			}
+			// handler error?...
+
+		}
+		node_endpoints, err := utils.GetNodeEndpoints()
+		if err != nil {
+			fmt.Println(err)
+			// handler error?...
+		}
+
+		fmt.Print("please set your admin username for grafana: ")
+		var grafanaUser string
+		_, err = fmt.Scanln(&grafanaUser)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+			return
+		}
+
+		fmt.Print("please set your admin password for grafana: ")
+		var grafanaPassword string
+		_, err = fmt.Scanln(&grafanaPassword)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+			return
+		}
+		var secretData = map[string][]byte{
+			"admin-user":     []byte(grafanaUser),
+			"admin-password": []byte(grafanaPassword),
+		}
+		if err := objects.CreateSecret("grafana-admin-credentials", namespace, secretData); err != nil {
+			fmt.Println(err)
+			// handler error
+		}
+
+		fmt.Println("\ninstalling monitoring stack")
+		values := types.GetKubePrometheusValues(node_endpoints)
+		monitoringhelmPackage := utils.InstallHelmPackage("kube-prometheus-stack", "https://prometheus-community.github.io/helm-charts", "", namespace, values)
+
+		progChan = make(chan types.ProgCount)
+		go objects.HandleResource("CustomResourceDefinition", "", "Established", progChan)
+		utils.DisplayProgress(progChan, "validating monitoring crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		currentOp += 1
+
+		progChan = make(chan types.ProgCount)
+		go objects.HandleResource("Deployment", namespace, "Available", progChan)
+		utils.DisplayProgress(progChan, "creating monitoring deployments", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		currentOp += 1
+
+		Profile.Packages = append(Profile.Packages, monitoringhelmPackage)
 
 	}
-	// save profile : after all configs have been update!
 
 	err = utils.SaveProfile(&Profile)
 	if err != nil {

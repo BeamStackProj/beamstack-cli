@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func GetProfile(configFile string) (profile types.Profiles, err error) {
+func LoadProfileFromConfig(configFile string) (profile types.Profiles, err error) {
 	// Check if the config file exists
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		return profile, fmt.Errorf("config file not found at %s", configFile)
@@ -44,7 +44,7 @@ func parseYAML(filePath string, profile *types.Profiles) error {
 	defer file.Close()
 
 	// Read file contents
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return fmt.Errorf("error reading file: %v", err)
 	}
@@ -66,7 +66,7 @@ func parseJSON(filePath string, profile *types.Profiles) error {
 	defer file.Close()
 
 	// Read file contents
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return fmt.Errorf("error reading file: %v", err)
 	}
@@ -98,4 +98,18 @@ func SaveProfile(profile *types.Profiles) error {
 		return fmt.Errorf("Error writing profile file, %s", err)
 	}
 	return nil
+}
+
+func GetProfile(profileName string) (profile types.Profiles, err error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return profile, fmt.Errorf("could not locate home directory %s", err)
+	}
+
+	profilepath := filepath.Join(homeDir, ".beamstack", "profiles", fmt.Sprintf("%s.json", profileName))
+	err = parseJSON(profilepath, &profile)
+	if err != nil {
+		return profile, err
+	}
+	return
 }

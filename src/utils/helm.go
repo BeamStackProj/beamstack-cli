@@ -12,7 +12,7 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 )
 
-func InstallHelmPackage(name string, url string, version string) (helmPackage types.Package) {
+func InstallHelmPackage(name string, url string, version string, namespace string, values *map[string]interface{}) (helmPackage types.Package) {
 	// Set up Helm action configuration
 	helmPackage = types.Package{
 		Name:    name,
@@ -21,8 +21,12 @@ func InstallHelmPackage(name string, url string, version string) (helmPackage ty
 		Type:    "helm",
 	}
 
+	if namespace == "" {
+		namespace = "default"
+	}
+
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(cli.New().RESTClientGetter(), "default", os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
+	if err := actionConfig.Init(cli.New().RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
 		fmt.Printf(format, v...)
 	}); err != nil {
 		panic(err.Error())
@@ -51,7 +55,7 @@ func InstallHelmPackage(name string, url string, version string) (helmPackage ty
 	// Install the Operator
 	install := action.NewInstall(actionConfig)
 	install.ReleaseName = name
-	install.Namespace = "default"
+	install.Namespace = namespace
 
 	chartPath, err := install.LocateChart(name+"/"+name, settings)
 	if err != nil {
@@ -62,7 +66,7 @@ func InstallHelmPackage(name string, url string, version string) (helmPackage ty
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Println(len(chart.CRDObjects()))
+
 	for _, crd := range chart.CRDObjects() {
 		helmPackage.Dependencies = append(helmPackage.Dependencies, &types.Package{
 			Name:    crd.Name,
@@ -70,16 +74,10 @@ func InstallHelmPackage(name string, url string, version string) (helmPackage ty
 			Type:    "k8s.crd",
 			Version: crd.File.Name,
 		})
-		fmt.Println(crd.Filename)
-		fmt.Println(crd.Name)
 	}
 	delete := action.NewUninstall(actionConfig)
-	deletedrelease, _ := delete.Run(name)
-	if deletedrelease != nil {
-		fmt.Printf("removed previous installed release %s \n", deletedrelease.Release.Name)
-	}
-
-	_, err = install.Run(chart, map[string]interface{}{})
+	_, _ = delete.Run(name)
+	_, err = install.Run(chart, *values)
 	if err != nil {
 		panic(err.Error())
 	}

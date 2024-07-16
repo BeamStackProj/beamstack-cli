@@ -8,13 +8,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+var configPath string
+
 func InitConfig() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
 	}
 
-	configPath := filepath.Join(homeDir, ".beamstack", "config")
+	configPath = filepath.Join(homeDir, ".beamstack", "config")
 
 	viper.AddConfigPath(configPath)
 	viper.SetConfigType("json")
