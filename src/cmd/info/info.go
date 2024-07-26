@@ -4,7 +4,11 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package info
 
 import (
+	"fmt"
+
+	"github.com/BeamStackProj/beamstack-cli/src/utils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // infoCmd represents the info command
@@ -12,6 +16,36 @@ var InfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Pallete that contains information based commands",
 	Long:  `Pallete that contains information based commands`,
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, err := utils.GetCurrentContext()
+		if err != nil {
+			fmt.Println("could not retrieve current context")
+		}
+		fmt.Printf("current kube context: %s\n", ctx)
+		contextsStringMap := viper.GetStringMapString("contexts")
+
+		var profileName string
+		if p, ok := contextsStringMap[ctx]; ok {
+			fmt.Printf("Current profile: %s\n", p)
+			profileName = p
+		}
+
+		if profileName == "" {
+			return
+		}
+		profile, err := utils.GetProfile(profileName)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		fmt.Println("installed packages:")
+		for _, p := range profile.Packages {
+			fmt.Println("\t", p.Name)
+			for _, d := range p.Dependencies {
+				fmt.Println("\t\t", d.Name)
+			}
+		}
+	},
 }
 
 func init() {

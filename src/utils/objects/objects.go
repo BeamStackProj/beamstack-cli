@@ -3,26 +3,11 @@ package objects
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-	"os"
-	"strings"
 
-	"encoding/json"
-
-	"k8s.io/apimachinery/pkg/util/yaml"
-
-	"bytes"
-
-	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
 )
@@ -43,94 +28,47 @@ func CreateObject(path string) error {
 	return nil
 }
 
-func applyYAML(dynamicClient dynamic.Interface, path string) error {
-	var data []byte
-	var err error
+func CreateNamespace(name string) error {
+	config := utils.GetKubeConfig()
 
-	if isURL(path) {
-		data, err = downloadFile(path)
-		if err != nil {
-			return err
-		}
-	} else {
-		data, err = os.ReadFile(path)
-		if err != nil {
-			return err
-		}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
 	}
 
-	yamlDecoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 100)
-	for {
-		var rawObj runtime.RawExtension
-		if err := yamlDecoder.Decode(&rawObj); err != nil {
-			if err == io.EOF {
-				break
-			}
-			return err
-		}
-
-		obj := &unstructured.Unstructured{}
-		if err := json.Unmarshal(rawObj.Raw, obj); err != nil {
-			return err
-		}
-
-		gvk := obj.GroupVersionKind()
-		resourceClient := dynamicClient.Resource(
-			schema.GroupVersionResource{
-				Group:    gvk.Group,
-				Version:  gvk.Version,
-				Resource: strings.ToLower(gvk.Kind) + "s",
-			},
-		).Namespace(obj.GetNamespace())
-
-		existing, err := resourceClient.Get(context.Background(), obj.GetName(), v1.GetOptions{})
-
-		if errors.IsNotFound(err) {
-			// Create the resource
-			_, err = resourceClient.Create(context.Background(), obj, v1.CreateOptions{})
-			if err != nil {
-				return err
-			}
-			fmt.Printf("Created %s %s/%s\n", gvk.Kind, obj.GetNamespace(), obj.GetName())
-		} else if err != nil {
-			return err
-		} else {
-			return nil //TODO: fix patch bug
-			// Update the resource
-			existingJSON, err := json.Marshal(existing.Object)
-			if err != nil {
-				return err
-			}
-
-			rawObjJSON, err := json.Marshal(rawObj.Object)
-			if err != nil {
-				return err
-			}
-			patch, err := strategicpatch.CreateTwoWayMergePatch(existingJSON, rawObjJSON, obj)
-			if err != nil {
-				return err
-			}
-			_, err = resourceClient.Patch(context.Background(), obj.GetName(), types.StrategicMergePatchType, patch, v1.PatchOptions{})
-			if err != nil {
-				return err
-			}
-			fmt.Printf("Updated %s %s/%s\n", gvk.Kind, obj.GetNamespace(), obj.GetName())
-		}
+	namespace := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+	_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func isURL(str string) bool {
-	u, err := url.Parse(str)
-	return err == nil && u.Scheme != "" && u.Host != ""
-}
+func CreateSecret(name string, namespace string, data map[string][]byte) error {
+	config := utils.GetKubeConfig()
 
-func downloadFile(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer resp.Body.Close()
-	return io.ReadAll(resp.Body)
+
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: data,
+	}
+
+	_, err = clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

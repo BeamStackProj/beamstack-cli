@@ -68,7 +68,6 @@ func waitForResourceCondition(client dynamic.Interface, gvr schema.GroupVersionR
 		chanel <- types.ProgCount{OnInit: true, Count: len(resourceList.Items)}
 
 		for _, item := range resourceList.Items {
-			// fmt.Printf("Waiting for %s %s to be %s...\n", gvr.Resource, item.GetName(), condition)
 			err := wait.PollUntilContextTimeout(context.Background(), time.Second*2, time.Minute*10, true, func(context.Context) (bool, error) {
 				var (
 					res *unstructured.Unstructured
@@ -110,20 +109,6 @@ func waitForResourceCondition(client dynamic.Interface, gvr schema.GroupVersionR
 		time.Sleep(2 * time.Second)
 	}
 }
-
-// func getResourceGVR(resource string) (metav1.GroupVersionResource, error) {
-// 	switch resource {
-// 	case "CustomResourceDefinition":
-// 		return metav1.GroupVersionResource{Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions"}, nil
-// 	case "Deployment":
-// 		return metav1.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}, nil
-// 	case "Service":
-// 		return metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}, nil
-// 	// will add more service
-// 	default:
-// 		return metav1.GroupVersionResource{}, fmt.Errorf("unsupported resource type: %s", resource)
-// 	}
-// }
 
 func getResourceGVR(discoveryClient *discovery.DiscoveryClient, resource string) (schema.GroupVersionResource, error) {
 	apiResourceLists, err := discoveryClient.ServerPreferredResources()
