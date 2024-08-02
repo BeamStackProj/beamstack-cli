@@ -14,6 +14,7 @@ import (
 	"github.com/BeamStackProj/beamstack-cli/src/types"
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -187,6 +188,25 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	filename, err := SavePipeline(pipeline)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if err := utils.MigrateFilesToContainer(
+		clientset,
+		types.MigrationParams{
+			Pod:      *pod,
+			SrcPath:  filename,
+			DestPath: filepath.Join(PVCMountPath, filename),
+		},
+	); err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	// TODO
 	// move pipeline yaml file to pvc
 	// create job
@@ -195,22 +215,22 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 	// delete migration pod
 }
 
-// func SaveStructToYAML(filename string, data interface{}) error {
-// 	yamlData, err := yaml.Marshal(data)
-// 	if err != nil {
-// 		return fmt.Errorf("error marshalling to YAML: %w", err)
-// 	}
+func SavePipeline(data interface{}) (string, error) {
+	yamlData, err := yaml.Marshal(data)
+	if err != nil {
+		return "", fmt.Errorf("error marshalling to YAML: %w", err)
+	}
 
-// 	file, err := os.Create(filename)
-// 	if err != nil {
-// 		return fmt.Errorf("error creating file: %w", err)
-// 	}
-// 	defer file.Close()
+	tmpFile, err := os.CreateTemp("", "*.yaml")
+	if err != nil {
+		return "", fmt.Errorf("error creating temp file: %w", err)
+	}
+	defer tmpFile.Close()
 
-// 	_, err = file.Write(yamlData)
-// 	if err != nil {
-// 		return fmt.Errorf("error writing to file: %w", err)
-// 	}
+	_, err = tmpFile.Write(yamlData)
+	if err != nil {
+		return "", fmt.Errorf("error writing to file: %w", err)
+	}
 
-// 	return nil
-// }
+	return tmpFile.Name(), nil
+}
