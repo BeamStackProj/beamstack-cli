@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/BeamStackProj/beamstack-cli/src/objects"
 	"github.com/BeamStackProj/beamstack-cli/src/types"
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
-	"github.com/BeamStackProj/beamstack-cli/src/utils/objects"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -129,10 +129,6 @@ func runInit(cmd *cobra.Command, args []string) {
 
 	}
 
-	contextsStringMap[currentContext] = Profile.Name
-
-	viper.Set("contexts", contextsStringMap)
-
 	if err := viper.WriteConfig(); err != nil {
 		fmt.Printf("Error writing config file: %v\n", err)
 	}
@@ -162,7 +158,9 @@ func runInit(cmd *cobra.Command, args []string) {
 	})
 
 	if Flink {
-		if err := objects.CreateNamespace("flink-operator"); err != nil {
+		flinkNamespace := "flink"
+
+		if err := objects.CreateNamespace(flinkNamespace); err != nil {
 			if err != os.ErrExist {
 				fmt.Println(err)
 			}
@@ -170,7 +168,7 @@ func runInit(cmd *cobra.Command, args []string) {
 		}
 
 		fmt.Println("\ninstalling flink operator")
-		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion, "flink-operator", &map[string]interface{}{})
+		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion, flinkNamespace, &map[string]interface{}{})
 
 		progChan := make(chan types.ProgCount)
 		go objects.HandleResource("CustomResourceDefinition", "", "Established", progChan)
@@ -178,7 +176,7 @@ func runInit(cmd *cobra.Command, args []string) {
 		currentOp += 1
 
 		progChan = make(chan types.ProgCount)
-		go objects.HandleResource("Deployment", "flink-operator", "Available", progChan)
+		go objects.HandleResource("Deployment", flinkNamespace, "Available", progChan)
 		utils.DisplayProgress(progChan, "creating flink deploymens", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
@@ -242,6 +240,9 @@ func runInit(cmd *cobra.Command, args []string) {
 		Profile.Packages = append(Profile.Packages, monitoringhelmPackage)
 
 	}
+
+	contextsStringMap[currentContext] = Profile.Name
+	viper.Set("contexts", contextsStringMap)
 
 	err = utils.SaveProfile(&Profile)
 	if err != nil {

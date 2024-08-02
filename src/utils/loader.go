@@ -25,9 +25,9 @@ func LoadProfileFromConfig(configFile string) (profile types.Profiles, err error
 	// Check if the file type is supported
 	switch ext {
 	case ".yaml", ".yml":
-		err = parseYAML(configFile, &profile)
+		err = ParseYAML(configFile, &profile)
 	case ".json":
-		err = parseJSON(configFile, &profile)
+		err = ParseJSON(configFile, &profile)
 	default:
 		return profile, fmt.Errorf("unsupported file type: %s", ext)
 	}
@@ -35,29 +35,26 @@ func LoadProfileFromConfig(configFile string) (profile types.Profiles, err error
 	return profile, err
 }
 
-func parseYAML(filePath string, profile *types.Profiles) error {
-	// Open the YAML file
+func ParseYAML(filePath string, out interface{}) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("error opening file: %v", err)
 	}
 	defer file.Close()
 
-	// Read file contents
 	data, err := io.ReadAll(file)
 	if err != nil {
 		return fmt.Errorf("error reading file: %v", err)
 	}
 
-	// Unmarshal YAML data into profile struct
-	if err := yaml.Unmarshal(data, profile); err != nil {
+	if err := yaml.Unmarshal(data, out); err != nil {
 		return fmt.Errorf("error parsing YAML: %v", err)
 	}
 
 	return nil
 }
 
-func parseJSON(filePath string, profile *types.Profiles) error {
+func ParseJSON(filePath string, out interface{}) error {
 	// Open the JSON file
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -71,8 +68,7 @@ func parseJSON(filePath string, profile *types.Profiles) error {
 		return fmt.Errorf("error reading file: %v", err)
 	}
 
-	// Unmarshal JSON data into profile struct
-	if err := json.Unmarshal(data, profile); err != nil {
+	if err := json.Unmarshal(data, out); err != nil {
 		return fmt.Errorf("error parsing JSON: %v", err)
 	}
 
@@ -83,7 +79,7 @@ func SaveProfile(profile *types.Profiles) error {
 
 	jsonData, err := json.MarshalIndent(profile, "", "    ")
 	if err != nil {
-		return fmt.Errorf("Error marshaling config to JSON, %s", err)
+		return fmt.Errorf("error marshaling config to JSON, %s", err)
 	}
 
 	homeDir, err := os.UserHomeDir()
@@ -95,7 +91,7 @@ func SaveProfile(profile *types.Profiles) error {
 	// Write the JSON data to a file
 	err = os.WriteFile(fileName, jsonData, 0644)
 	if err != nil {
-		return fmt.Errorf("Error writing profile file, %s", err)
+		return fmt.Errorf("error writing profile file, %s", err)
 	}
 	return nil
 }
@@ -107,7 +103,7 @@ func GetProfile(profileName string) (profile types.Profiles, err error) {
 	}
 
 	profilepath := filepath.Join(homeDir, ".beamstack", "profiles", fmt.Sprintf("%s.json", profileName))
-	err = parseJSON(profilepath, &profile)
+	err = ParseJSON(profilepath, &profile)
 	if err != nil {
 		return profile, err
 	}

@@ -113,3 +113,20 @@ func downloadFile(url string) ([]byte, error) {
 	defer resp.Body.Close()
 	return io.ReadAll(resp.Body)
 }
+
+func SplitAPIVersion(apiVersion string) (string, string, error) {
+	parts := strings.Split(apiVersion, "/")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid apiVersion format: %s", apiVersion)
+	}
+	return parts[0], parts[1], nil
+}
+
+func toUnstructured(obj interface{}) (*unstructured.Unstructured, error) {
+	// Convert the struct to a map[string]interface{}
+	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: unstructuredMap}, nil
+}
