@@ -3,16 +3,14 @@ package types
 import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/rest"
 )
 
 type PortForward struct {
-	RestConfig *rest.Config
-	PodPort    int
-	Streams    genericclioptions.IOStreams
-	StopCh     <-chan struct{}
-	ReadyCh    chan struct{}
-	LocalPort  int
+	PodPort   uint16
+	Streams   genericclioptions.IOStreams
+	StopCh    <-chan struct{}
+	ReadyCh   chan struct{}
+	LocalPort uint16
 }
 
 type PortForwardAPodRequest struct {

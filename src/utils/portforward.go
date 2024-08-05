@@ -20,7 +20,8 @@ func PortForwardPod(clientset *kubernetes.Clientset, req types.PortForwardAPodRe
 		Namespace(req.Pod.Namespace).
 		Name(req.Pod.Name).
 		SubResource("portforward")
-	transport, upgrader, err := spdy.RoundTripperFor(req.RestConfig)
+	config := GetKubeConfig()
+	transport, upgrader, err := spdy.RoundTripperFor(config)
 	if err != nil {
 		return err
 	}
@@ -60,12 +61,11 @@ func PortForwardSvc(clientset *kubernetes.Clientset, req types.PortForwardASVCRe
 			},
 		},
 		PortForward: types.PortForward{
-			RestConfig: req.RestConfig,
-			LocalPort:  req.LocalPort,
-			PodPort:    req.PodPort,
-			StopCh:     req.StopCh,
-			ReadyCh:    req.ReadyCh,
-			Streams:    req.Streams,
+			LocalPort: req.LocalPort,
+			PodPort:   req.PodPort,
+			StopCh:    req.StopCh,
+			ReadyCh:   req.ReadyCh,
+			Streams:   req.Streams,
 		},
 	})
 }

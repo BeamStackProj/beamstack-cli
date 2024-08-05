@@ -27,9 +27,9 @@ func ProgressBar(taskDesc string, taskCount string, max int) *progressbar.Progre
 	return bar
 }
 
-func DisplayProgress(progChan chan types.ProgCount, taskDesc string, taskCount string) {
+func DisplayProgress(progChan *chan types.ProgCount, taskDesc string, taskCount string) {
 	var bar *progressbar.ProgressBar
-	for i := range progChan {
+	for i := range *progChan {
 		if i.OnInit {
 			if i.Count == 1 {
 				i.Count = 10

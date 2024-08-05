@@ -10,6 +10,7 @@ import (
 	"github.com/BeamStackProj/beamstack-cli/src/cmd/deploy"
 	"github.com/BeamStackProj/beamstack-cli/src/cmd/info"
 	"github.com/BeamStackProj/beamstack-cli/src/cmd/initialize"
+	"github.com/BeamStackProj/beamstack-cli/src/cmd/open"
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
 	"github.com/spf13/cobra"
 )
@@ -35,6 +36,7 @@ func addSubCommandPallets() {
 	rootCmd.AddCommand(create.CreateCmd)
 	rootCmd.AddCommand(deploy.DeployCmd)
 	rootCmd.AddCommand(info.InfoCmd)
+	rootCmd.AddCommand(open.OpenCmd)
 }
 
 func init() {

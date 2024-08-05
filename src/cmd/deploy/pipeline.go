@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"path/filepath"
 
@@ -19,14 +18,20 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var (
-	flinkCluster string = ""
-	PVCMountPath string = "/pvc"
-	JobName      string = "beamjob"
-	Parallelism  uint8  = 1
+	flinkCluster     string       = ""
+	PVCMountPath     string       = "/pvc"
+	JobName          string       = "beamjob"
+	Parallelism      uint8        = 1
+	Wait             bool         = false
+	Migrate          bool         = true
+	config           *rest.Config = utils.GetKubeConfig()
+	pipelineFilename string
 )
 
 type FileInfo struct {
@@ -44,11 +49,16 @@ var PipelineCmd = &cobra.Command{
 }
 
 func init() {
-	PipelineCmd.Flags().StringVar(&flinkCluster, "flink-cluster", flinkCluster, "Specify the Flink cluster to deploy the Apache Beam pipeline")
-
+	PipelineCmd.Flags().StringVar(&flinkCluster, "flinkCluster", flinkCluster, "Specify the Flink cluster to deploy the Apache Beam pipeline.")
+	PipelineCmd.Flags().StringVar(&PVCMountPath, "pvcMountPath", PVCMountPath, "Mount path for the Persistent Volume Claim. Note: The mount path is set to 'pvc' during cluster creation, so changing this may cause issues.")
+	PipelineCmd.Flags().StringVar(&JobName, "jobname", JobName, "Specify the name of the pipeline job.")
+	PipelineCmd.Flags().Uint8Var(&Parallelism, "parallelism", Parallelism, "Set the pipeline parallelism.")
+	PipelineCmd.Flags().BoolVarP(&Wait, "wait", "w", Wait, "Wait for the pipeline to complete.")
+	PipelineCmd.Flags().BoolVarP(&Migrate, "migrate", "m", Migrate, "Migrate data to the Kubernetes cluster. This is necessary if the pipeline is to be run on local data. Pipeline Results will also be migrated to local system if wait is true.")
 }
 
 func DeployPipeline(cmd *cobra.Command, args []string) {
+	pipelineFilename = args[0]
 	profile, err := utils.ValidateCluster()
 
 	if err != nil {
@@ -60,9 +70,8 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		return
 	}
 	flinkVersion := strings.Replace(profile.Operators.Flink.Version, ".", "_", 1)
-
 	pipeline := &types.Pipeline{}
-	err = utils.ParseYAML(args[0], pipeline)
+	err = utils.ParseYAML(pipelineFilename, pipeline)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -71,86 +80,13 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 	uploadList := []FileInfo{}
 	downloadList := []FileInfo{}
 
-	if src := pipeline.Pipeline.Source; src != nil {
-		if path, ok := (*src.Config)["path"].(string); ok {
-			fileInfo, err := os.Stat(path)
-			if err != nil {
-				fmt.Printf("error loading file in config.path for source %s: %s\n", src.Type, err)
-				return
-			}
-
-			if !fileInfo.IsDir() {
-				splits := strings.Split(path, "/")
-				(*src.Config)["path"] = filepath.Join(PVCMountPath, "data", splits[len(splits)-1])
-			} else {
-				(*src.Config)["path"] = filepath.Join(PVCMountPath, "data")
-			}
-
-			uploadList = append(uploadList, FileInfo{Src: path, Dest: filepath.Join(PVCMountPath, "data")})
-		}
-	}
-
-	if sink := pipeline.Pipeline.Sink; sink != nil {
-		if path, ok := (*sink.Config)["path"].(string); ok {
-			splits := strings.Split(path, "/")
-			var resultPath string
-
-			if len(splits) > 1 {
-				resultPath = filepath.Join(splits[len(splits)-2], splits[len(splits)-1])
-			} else if len(splits) == 1 {
-				resultPath = splits[len(splits)-1]
-			}
-
-			(*sink.Config)["path"] = filepath.Join(PVCMountPath, resultPath)
-
-			downloadList = append(downloadList, FileInfo{Src: filepath.Join(PVCMountPath, resultPath), Dest: path})
-		}
-	}
-
-	for _, tf := range pipeline.Pipeline.Transforms {
-		if strings.HasPrefix(strings.ToLower(tf.Type), "readfrom") {
-			if path, ok := (*tf.Config)["path"].(string); ok {
-				fileInfo, err := os.Stat(path)
-				if err != nil {
-					fmt.Printf("error loading file in config.path for transform %s: %s\n", tf.Type, err)
-					return
-				}
-
-				if !fileInfo.IsDir() {
-					splits := strings.Split(path, "/")
-					(*tf.Config)["path"] = filepath.Join(PVCMountPath, "data", splits[len(splits)-1])
-				} else {
-					(*tf.Config)["path"] = filepath.Join(PVCMountPath, "data")
-				}
-
-				uploadList = append(uploadList, FileInfo{Src: path, Dest: filepath.Join(PVCMountPath, "data")})
-			}
-
-		} else if strings.HasPrefix(strings.ToLower(tf.Type), "writeto") {
-			if path, ok := (*tf.Config)["path"].(string); ok {
-				splits := strings.Split(path, "/")
-				var resultPath string
-
-				if len(splits) > 1 {
-					resultPath = filepath.Join(splits[len(splits)-2], splits[len(splits)-1])
-				} else if len(splits) == 1 {
-					resultPath = splits[len(splits)-1]
-				}
-
-				(*tf.Config)["path"] = filepath.Join(PVCMountPath, resultPath)
-
-				downloadList = append(downloadList, FileInfo{Src: filepath.Join(PVCMountPath, resultPath), Dest: path})
-			}
-		}
-	}
-	config := utils.GetKubeConfig()
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	pod, err := objects.CreatePod(clientset,
+	MigrationPod, err := objects.CreatePod(clientset,
 		v1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "migration",
@@ -190,52 +126,126 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println("Performing data migration!")
-	for _, file := range uploadList {
-		if err := utils.MigrateFilesToContainer(
-			clientset,
-			types.MigrationParams{
-				Pod:      *pod,
-				SrcPath:  file.Src,
-				DestPath: file.Dest,
-			},
-		); err != nil {
-			fmt.Println(err)
+	if Migrate {
+
+		if src := pipeline.Pipeline.Source; src != nil {
+			if path, ok := (*src.Config)["path"].(string); ok {
+				fileInfo, err := os.Stat(path)
+				if err != nil {
+					fmt.Printf("error loading file in config.path for source %s: %s\n", src.Type, err)
+					return
+				}
+
+				if !fileInfo.IsDir() {
+					splits := strings.Split(path, "/")
+					(*src.Config)["path"] = filepath.Join(PVCMountPath, "data", splits[len(splits)-1])
+				} else {
+					(*src.Config)["path"] = filepath.Join(PVCMountPath, "data")
+				}
+
+				uploadList = append(uploadList, FileInfo{Src: path, Dest: filepath.Join(PVCMountPath, "data")})
+			}
 		}
-	}
 
-	filename, err := SavePipeline(pipeline)
+		if sink := pipeline.Pipeline.Sink; sink != nil {
+			if path, ok := (*sink.Config)["path"].(string); ok {
+				splits := strings.Split(path, "/")
+				var resultPath string
 
-	if err != nil {
-		fmt.Println(err)
-		return
+				if len(splits) > 1 {
+					resultPath = filepath.Join(splits[len(splits)-2], splits[len(splits)-1])
+				} else if len(splits) == 1 {
+					resultPath = splits[len(splits)-1]
+				}
+
+				(*sink.Config)["path"] = filepath.Join(PVCMountPath, resultPath)
+
+				downloadList = append(downloadList, FileInfo{Src: filepath.Join(PVCMountPath, resultPath), Dest: path})
+			}
+		}
+
+		for _, tf := range pipeline.Pipeline.Transforms {
+			if strings.HasPrefix(strings.ToLower(tf.Type), "readfrom") {
+				if path, ok := (*tf.Config)["path"].(string); ok {
+					fileInfo, err := os.Stat(path)
+					if err != nil {
+						fmt.Printf("error loading file in config.path for transform %s: %s\n", tf.Type, err)
+						return
+					}
+
+					if !fileInfo.IsDir() {
+						splits := strings.Split(path, "/")
+						(*tf.Config)["path"] = filepath.Join(PVCMountPath, "data", splits[len(splits)-1])
+					} else {
+						(*tf.Config)["path"] = filepath.Join(PVCMountPath, "data")
+					}
+
+					uploadList = append(uploadList, FileInfo{Src: path, Dest: filepath.Join(PVCMountPath, "data")})
+				}
+
+			} else if strings.HasPrefix(strings.ToLower(tf.Type), "writeto") {
+				if path, ok := (*tf.Config)["path"].(string); ok {
+					splits := strings.Split(path, "/")
+					var resultPath string
+
+					if len(splits) > 1 {
+						resultPath = filepath.Join(splits[len(splits)-2], splits[len(splits)-1])
+					} else if len(splits) == 1 {
+						resultPath = splits[len(splits)-1]
+					}
+
+					(*tf.Config)["path"] = filepath.Join(PVCMountPath, resultPath)
+
+					downloadList = append(downloadList, FileInfo{Src: filepath.Join(PVCMountPath, resultPath), Dest: path})
+				}
+			}
+		}
+
+		fmt.Println("Performing data migration!")
+		for _, file := range uploadList {
+			if err := utils.MigrateFilesToContainer(
+				clientset,
+				types.MigrationParams{
+					Pod:      *MigrationPod,
+					SrcPath:  file.Src,
+					DestPath: file.Dest,
+				},
+			); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		pipelineFilename, err = savePipeline(pipeline)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	if err := utils.MigrateFilesToContainer(
 		clientset,
 		types.MigrationParams{
-			Pod:      *pod,
-			SrcPath:  filename,
-			DestPath: filepath.Join(PVCMountPath, filename),
+			Pod:      *MigrationPod,
+			SrcPath:  pipelineFilename,
+			DestPath: filepath.Join(PVCMountPath, pipelineFilename),
 		},
 	); err != nil {
 		fmt.Println(err)
 		return
 	}
-	now := time.Now()
-	dateTime := now.Format("2006-01-02-150405")
-	jobName := fmt.Sprintf("%s-%s", "pipeline", dateTime)
-	_, err = objects.CreateJob(
+
+	pipelineJob, err := objects.CreateJob(
 		clientset,
 		batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      jobName,
+				Name:      JobName,
 				Namespace: "flink",
 			},
 			Spec: batchv1.JobSpec{
 				Template: v1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{"app": jobName},
+						Labels: map[string]string{"app": JobName},
 					},
 					Spec: v1.PodSpec{
 						Containers: []v1.Container{
@@ -244,7 +254,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 								Image:   fmt.Sprintf("beamstackproj/flink-harness%s:latest", flinkVersion),
 								Command: []string{"python"},
 								Args: []string{
-									"-m", "apache_beam.yaml.main", fmt.Sprintf("--pipeline_spec_file=%s", filepath.Join(PVCMountPath, filename)),
+									"-m", "apache_beam.yaml.main", fmt.Sprintf("--pipeline_spec_file=%s", filepath.Join(PVCMountPath, pipelineFilename)),
 									"--runner=FlinkRunner", fmt.Sprintf("--flink_master=%s-rest.flink.svc.cluster.local:8081", flinkCluster),
 									fmt.Sprintf("--job_name=%s", JobName), fmt.Sprintf("--parallelism=%s", string(Parallelism)), "--environment_type=EXTERNAL",
 									"--environment_config=localhost:50000", "--flink_submit_uber_jar",
@@ -277,13 +287,47 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		fmt.Printf("could not create pipeline job %s\n", err)
 	}
 
-	err = os.Remove(filename)
+	err = os.Remove(pipelineFilename)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	fmt.Println("Pipeline deployed!")
+
+	if Wait {
+		donChan := make(chan string, 1)
+		go objects.HandleSpecificResource(schema.GroupVersionResource{
+			Group:    "batch",
+			Version:  "v1",
+			Resource: "jobs",
+		}, pipelineJob.Name, "flink", "Complete", &donChan)
+
+		for i := range donChan {
+			fmt.Println(i)
+			fmt.Printf("pipeline conditions %s", pipelineJob.Status.Conditions)
+		}
+
+		if Migrate {
+			fmt.Println("migrating pipeline results!")
+			for _, path := range downloadList {
+				utils.MigrateFilesFromContainer(clientset,
+					types.MigrationParams{
+						Pod:      *MigrationPod,
+						SrcPath:  path.Src,
+						DestPath: path.Dest,
+					},
+				)
+			}
+		}
+
+		fmt.Println("Pipeline is done!")
+		clientset.BatchV1().Jobs("flink").Delete(cmd.Context(), pipelineJob.Name, metav1.DeleteOptions{})
+	}
+	clientset.CoreV1().Pods("flink").Delete(cmd.Context(), MigrationPod.Name, metav1.DeleteOptions{})
+
 }
 
-func SavePipeline(data interface{}) (string, error) {
+func savePipeline(data interface{}) (string, error) {
 	yamlData, err := yaml.Marshal(data)
 	if err != nil {
 		return "", fmt.Errorf("error marshalling to YAML: %w", err)

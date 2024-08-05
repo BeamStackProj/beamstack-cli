@@ -123,3 +123,82 @@ func MigrateFilesToContainer(clientset *kubernetes.Clientset, params types.Migra
 
 	return nil
 }
+
+func MigrateFilesFromContainer(clientset *kubernetes.Clientset, params types.MigrationParams) error {
+	config := GetKubeConfig()
+
+	pod, err := clientset.CoreV1().Pods(params.Pod.Namespace).Get(context.TODO(), params.Pod.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	containers := pod.Spec.Containers
+	if params.ContainerName == nil {
+		params.ContainerName = &containers[0].Name
+	}
+
+	buf := new(bytes.Buffer)
+
+	req := clientset.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(params.Pod.Name).
+		Namespace(params.Pod.Namespace).
+		SubResource("exec").
+		Param("container", *params.ContainerName).
+		Param("command", "/bin/sh").
+		Param("command", "-c").
+		Param("command", "tar cf - "+params.SrcPath).
+		Param("stdin", "false").
+		Param("stdout", "true").
+		Param("stderr", "true").
+		Param("tty", "false")
+
+	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+	if err != nil {
+		return err
+	}
+
+	err = exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
+		Stdout: buf,
+		Stderr: os.Stderr,
+	})
+	if err != nil {
+		return err
+	}
+
+	tr := tar.NewReader(buf)
+
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		normalizedSrcPath := filepath.ToSlash(strings.TrimPrefix(params.SrcPath, "/"))
+		normalizedHeaderName := filepath.ToSlash(strings.TrimPrefix(header.Name, "/"))
+
+		relativePath := strings.TrimPrefix(normalizedHeaderName, normalizedSrcPath)
+		target := filepath.Join(params.DestPath, relativePath)
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
+				return err
+			}
+		case tar.TypeReg:
+			f, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(header.Mode))
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(f, tr); err != nil {
+				f.Close()
+				return err
+			}
+			f.Close()
+		}
+	}
+
+	return nil
+}
