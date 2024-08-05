@@ -1,5 +1,5 @@
 /*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
+Copyright © 2024 MavenCode <opensource-dev@mavencode.com>
 */
 package deploy
 
@@ -254,10 +254,16 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 								Image:   fmt.Sprintf("beamstackproj/flink-harness%s:latest", flinkVersion),
 								Command: []string{"python"},
 								Args: []string{
-									"-m", "apache_beam.yaml.main", fmt.Sprintf("--pipeline_spec_file=%s", filepath.Join(PVCMountPath, pipelineFilename)),
-									"--runner=FlinkRunner", fmt.Sprintf("--flink_master=%s-rest.flink.svc.cluster.local:8081", flinkCluster),
-									fmt.Sprintf("--job_name=%s", JobName), fmt.Sprintf("--parallelism=%s", string(Parallelism)), "--environment_type=EXTERNAL",
-									"--environment_config=localhost:50000", "--flink_submit_uber_jar",
+									"-m",
+									"apache_beam.yaml.main",
+									fmt.Sprintf("--pipeline_spec_file=%s", filepath.Join(PVCMountPath, pipelineFilename)),
+									"--runner=FlinkRunner",
+									fmt.Sprintf("--flink_master=%s-rest.flink.svc.cluster.local:8081", flinkCluster),
+									fmt.Sprintf("--job_name=%s", JobName),
+									fmt.Sprintf("--parallelism=%s", string(Parallelism)),
+									"--environment_type=EXTERNAL",
+									"--environment_config=localhost:50000",
+									"--flink_submit_uber_jar",
 								},
 								VolumeMounts: []v1.VolumeMount{
 									{
