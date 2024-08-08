@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"path/filepath"
 
@@ -24,14 +25,15 @@ import (
 )
 
 var (
-	flinkCluster     string       = ""
-	PVCMountPath     string       = "/pvc"
-	JobName          string       = "beamjob"
-	Parallelism      uint8        = 1
-	Wait             bool         = false
-	Migrate          bool         = true
-	config           *rest.Config = utils.GetKubeConfig()
-	pipelineFilename string
+	flinkCluster          string       = ""
+	PVCMountPath          string       = "/pvc"
+	JobName               string       = "beamjob-asc"
+	Parallelism           uint8        = 1
+	Wait                  bool         = false
+	Migrate               bool         = true
+	config                *rest.Config = utils.GetKubeConfig()
+	pipelineFilename      string
+	CleanPipelineFilename string
 )
 
 type FileInfo struct {
@@ -59,6 +61,8 @@ func init() {
 
 func DeployPipeline(cmd *cobra.Command, args []string) {
 	pipelineFilename = args[0]
+	CleanPipelineFilename = args[0]
+
 	profile, err := utils.ValidateCluster()
 
 	if err != nil {
@@ -69,7 +73,6 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		fmt.Println("Flink Operator not initialized on this cluster")
 		return
 	}
-	flinkVersion := strings.Replace(profile.Operators.Flink.Version, ".", "_", 1)
 	pipeline := &types.Pipeline{}
 	err = utils.ParseYAML(pipelineFilename, pipeline)
 	if err != nil {
@@ -89,7 +92,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 	MigrationPod, err := objects.CreatePod(clientset,
 		v1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "migration",
+				Name:      fmt.Sprintf("%s-migration", JobName),
 				Namespace: "flink",
 			},
 			Spec: v1.PodSpec{
@@ -98,7 +101,11 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 						Name:  "busybox",
 						Image: "busybox",
 						Command: []string{
-							"sh", "-c", "'while true; do echo \"Running Migration!\"; sleep 3600; done'",
+							"sh",
+						},
+						Args: []string{
+							"-c",
+							`while true; do echo \"Running Migration!\"; sleep 3600; done`,
 						},
 						VolumeMounts: []v1.VolumeMount{
 							{
@@ -113,7 +120,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 						Name: "migration-volume",
 						VolumeSource: v1.VolumeSource{
 							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-								ClaimName: fmt.Sprintf("%s-pvs", flinkCluster),
+								ClaimName: fmt.Sprintf("%s-pvc", flinkCluster),
 							},
 						},
 					},
@@ -126,8 +133,9 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if Migrate {
+	time.Sleep(time.Second * 2)
 
+	if Migrate {
 		if src := pipeline.Pipeline.Source; src != nil {
 			if path, ok := (*src.Config)["path"].(string); ok {
 				fileInfo, err := os.Stat(path)
@@ -221,6 +229,8 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 			fmt.Println(err)
 			return
 		}
+
+		CleanPipelineFilename = strings.Replace(pipelineFilename, "/tmp", "", 1)
 	}
 
 	if err := utils.MigrateFilesToContainer(
@@ -228,13 +238,12 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		types.MigrationParams{
 			Pod:      *MigrationPod,
 			SrcPath:  pipelineFilename,
-			DestPath: filepath.Join(PVCMountPath, pipelineFilename),
+			DestPath: PVCMountPath,
 		},
 	); err != nil {
 		fmt.Println(err)
 		return
 	}
-
 	pipelineJob, err := objects.CreateJob(
 		clientset,
 		batchv1.Job{
@@ -248,22 +257,26 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 						Labels: map[string]string{"app": JobName},
 					},
 					Spec: v1.PodSpec{
+						RestartPolicy: "Never",
 						Containers: []v1.Container{
 							{
-								Name:    "beam-pipeline",
-								Image:   fmt.Sprintf("beamstackproj/flink-harness%s:latest", flinkVersion),
+								Name:  "beam-pipeline",
+								Image: "beamstackproj/beam-harness-v1_16:latest",
+								// Image:   "localhost:5000/harness",
 								Command: []string{"python"},
 								Args: []string{
 									"-m",
 									"apache_beam.yaml.main",
-									fmt.Sprintf("--pipeline_spec_file=%s", filepath.Join(PVCMountPath, pipelineFilename)),
+									fmt.Sprintf("--pipeline_spec_file=%s", filepath.Join(PVCMountPath, CleanPipelineFilename)),
+									fmt.Sprintf("--pipeline_spec_file=%s", "pipeline/pipeline-nonlinear-01.yaml"),
 									"--runner=FlinkRunner",
 									fmt.Sprintf("--flink_master=%s-rest.flink.svc.cluster.local:8081", flinkCluster),
 									fmt.Sprintf("--job_name=%s", JobName),
-									fmt.Sprintf("--parallelism=%s", string(Parallelism)),
+									fmt.Sprintf("--parallelism=%s", fmt.Sprintf("%d", Parallelism)),
 									"--environment_type=EXTERNAL",
 									"--environment_config=localhost:50000",
 									"--flink_submit_uber_jar",
+									"--checkpointing_interval=10000",
 								},
 								VolumeMounts: []v1.VolumeMount{
 									{
@@ -278,7 +291,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 								Name: "migration-volume",
 								VolumeSource: v1.VolumeSource{
 									PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-										ClaimName: fmt.Sprintf("%s-pvs", flinkCluster),
+										ClaimName: fmt.Sprintf("%s-pvc", flinkCluster),
 									},
 								},
 							},
@@ -291,11 +304,13 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		fmt.Printf("could not create pipeline job %s\n", err)
+		return
 	}
 
 	err = os.Remove(pipelineFilename)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	fmt.Println("Pipeline deployed!")
@@ -306,7 +321,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 			Group:    "batch",
 			Version:  "v1",
 			Resource: "jobs",
-		}, pipelineJob.Name, "flink", "Complete", &donChan)
+		}, pipelineJob.Name, "flink", "Complete", donChan)
 
 		for i := range donChan {
 			fmt.Println(i)

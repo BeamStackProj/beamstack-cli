@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/BeamStackProj/beamstack-cli/src/types"
@@ -14,32 +13,29 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-)
-
-var (
-	config    *rest.Config = utils.GetKubeConfig()
-	LocalPort uint16       = 8081
-	TagetPort uint16       = 8081
-	wg        sync.WaitGroup
-	readyCh   chan struct{}               = make(chan struct{})
-	stopCh    chan struct{}               = make(chan struct{}, 1)
-	stream    genericclioptions.IOStreams = genericclioptions.IOStreams{
-		In:     os.Stdin,
-		Out:    os.Stdout,
-		ErrOut: os.Stderr,
-	}
 )
 
 // infoCmd represents the info command
 var FlinkClusterCmd = &cobra.Command{
-	Use:   "show",
+	Use:   "flink",
 	Short: "opens up flink cluster ui",
 	Long:  `opens up flink cluster ui`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		LocalPort, err := cmd.Flags().GetUint16("localport")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		TargetPort, err := cmd.Flags().GetUint16("targetport")
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
 		profile, err := utils.ValidateCluster()
 		if err != nil {
 			fmt.Println(err)
@@ -89,7 +85,7 @@ var FlinkClusterCmd = &cobra.Command{
 				clientset,
 				types.PortForwardASVCRequest{
 					PortForward: types.PortForward{
-						PodPort:   TagetPort,
+						PodPort:   TargetPort,
 						LocalPort: LocalPort,
 						Streams:   stream,
 						StopCh:    stopCh,
@@ -124,6 +120,7 @@ var FlinkClusterCmd = &cobra.Command{
 }
 
 func init() {
-	FlinkClusterCmd.Flags().Uint16Var(&TagetPort, "targetport", TagetPort, "target container port")
-	FlinkClusterCmd.Flags().Uint16Var(&LocalPort, "localport", LocalPort, "This port will be forwarded to the target port on the cluster")
+	FlinkClusterCmd.Flags().Uint16("targetport", 8081, "target container port")
+	FlinkClusterCmd.Flags().Uint16("localport", 8081, "This port will be forwarded to the target port on the cluster")
+
 }

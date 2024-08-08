@@ -123,7 +123,6 @@ func SplitAPIVersion(apiVersion string) (string, string, error) {
 }
 
 func toUnstructured(obj interface{}) (*unstructured.Unstructured, error) {
-	// Convert the struct to a map[string]interface{}
 	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {
 		return nil, err

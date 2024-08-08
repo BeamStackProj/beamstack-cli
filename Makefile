@@ -26,6 +26,13 @@ uninstall:
 	@echo "✅ $(BINARY_NAME) Uninstalled..!"
 
 
+.PHONY: dryinstall
+dryinstall: go-build
+	@sudo mv $(SOURCE_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
+	@echo "✅ $(BINARY_NAME) installed..!"
+	@echo
+	make clean
+
 .PHONY: install
 install: uninstall go-build
 	@sudo mkdir ~/.$(BINARY_NAME) -p

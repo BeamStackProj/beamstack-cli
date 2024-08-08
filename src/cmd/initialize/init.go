@@ -141,13 +141,13 @@ func runInit(cmd *cobra.Command, args []string) {
 	}
 
 	progChan := make(chan types.ProgCount)
-	go objects.HandleResources("CustomResourceDefinition", "", "Established", &progChan)
-	utils.DisplayProgress(&progChan, "deploying crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
+	go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
+	utils.DisplayProgress(progChan, "deploying crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
 	currentOp += 1
 
 	progChan = make(chan types.ProgCount)
-	go objects.HandleResources("Deployment", "cert-manager", "Available", &progChan)
-	utils.DisplayProgress(&progChan, "creating deployments", fmt.Sprintf("%d/%d", currentOp, totalOps))
+	go objects.HandleResources("Deployment", "cert-manager", "Available", progChan)
+	utils.DisplayProgress(progChan, "creating deployments", fmt.Sprintf("%d/%d", currentOp, totalOps))
 	currentOp += 1
 
 	Profile.Packages = append(Profile.Packages, types.Package{
@@ -171,13 +171,13 @@ func runInit(cmd *cobra.Command, args []string) {
 		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion, flinkNamespace, &map[string]interface{}{})
 
 		progChan := make(chan types.ProgCount)
-		go objects.HandleResources("CustomResourceDefinition", "", "Established", &progChan)
-		utils.DisplayProgress(&progChan, "installing flink", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
+		utils.DisplayProgress(progChan, "installing flink", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
 		progChan = make(chan types.ProgCount)
-		go objects.HandleResources("Deployment", flinkNamespace, "Available", &progChan)
-		utils.DisplayProgress(&progChan, "creating flink deploymens", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		go objects.HandleResources("Deployment", flinkNamespace, "Available", progChan)
+		utils.DisplayProgress(progChan, "creating flink deploymens", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
 		Profile.Packages = append(Profile.Packages, helmPackage)
@@ -228,21 +228,27 @@ func runInit(cmd *cobra.Command, args []string) {
 		monitoringhelmPackage := utils.InstallHelmPackage("kube-prometheus-stack", "https://prometheus-community.github.io/helm-charts", "", namespace, values)
 
 		progChan = make(chan types.ProgCount)
-		go objects.HandleResources("CustomResourceDefinition", "", "Established", &progChan)
-		utils.DisplayProgress(&progChan, "validating monitoring crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
+		utils.DisplayProgress(progChan, "validating monitoring crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
 		progChan = make(chan types.ProgCount)
-		go objects.HandleResources("Deployment", namespace, "Available", &progChan)
-		utils.DisplayProgress(&progChan, "creating monitoring deployments", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		go objects.HandleResources("Deployment", namespace, "Available", progChan)
+		utils.DisplayProgress(progChan, "creating monitoring deployments", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
+		Profile.Monitoring = &types.Monitoring{
+			Name: "kube-prometheus-stack",
+		}
 		Profile.Packages = append(Profile.Packages, monitoringhelmPackage)
 
 	}
 
 	contextsStringMap[currentContext] = Profile.Name
 	viper.Set("contexts", contextsStringMap)
+	if err := viper.WriteConfig(); err != nil {
+		fmt.Printf("Error writing config file: %v\n", err)
+	}
 
 	err = utils.SaveProfile(&Profile)
 	if err != nil {

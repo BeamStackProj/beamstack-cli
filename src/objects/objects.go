@@ -3,6 +3,8 @@ package objects
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -15,6 +17,12 @@ import (
 
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
 )
+
+type resourceStruct struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              interface{} `json:"spec,omitempty"`
+}
 
 func CreateObject(path string) error {
 
@@ -77,14 +85,14 @@ func CreateSecret(name string, namespace string, data map[string][]byte) error {
 	return nil
 }
 
-func CreateDynamicResource(_type metav1.TypeMeta, metaData metav1.ObjectMeta, specs interface{}) error {
+func CreateDynamicResource(typeMeta metav1.TypeMeta, metaData metav1.ObjectMeta, specs interface{}, resourcetype string) error {
 	config := utils.GetKubeConfig()
 
 	client, err := dynamic.NewForConfig(config)
 	if err != nil {
 		return err
 	}
-	group, version, err := SplitAPIVersion(_type.APIVersion)
+	group, version, err := SplitAPIVersion(typeMeta.APIVersion)
 	if err != nil {
 		return err
 	}
@@ -92,25 +100,33 @@ func CreateDynamicResource(_type metav1.TypeMeta, metaData metav1.ObjectMeta, sp
 		schema.GroupVersionResource{
 			Group:    group,
 			Version:  version,
-			Resource: _type.Kind,
+			Resource: resourcetype,
 		},
 	).Namespace(metaData.Namespace)
 
 	_, err = resourceInterface.Get(context.TODO(), metaData.Name, metav1.GetOptions{})
-
-	if err == nil {
-		return nil
-	} else if !errors.IsNotFound(err) {
-		return err
+	if !errors.IsNotFound(err) {
+		return fmt.Errorf("%s %s already exists", typeMeta.Kind, metaData.Name)
 	}
 
-	unstructuredObj, err := toUnstructured(specs)
+	// r := resourceStruct{
+	// 	TypeMeta:   _type,
+	// 	ObjectMeta: metaData,
+	// 	Spec:       specs,
+	// }
+	// flinkDeployment := types.FlinkDeploymentSpec
+	unstructuredObj, err := toUnstructured(&resourceStruct{
+		TypeMeta:   typeMeta,
+		ObjectMeta: metaData,
+		Spec:       specs,
+	})
 	if err != nil {
 		return err
 	}
 
 	_, err = resourceInterface.Create(context.TODO(), unstructuredObj, metav1.CreateOptions{})
 	if err != nil {
+		fmt.Println("What IS THE FUKING PROBLEM HERE")
 		return err
 	}
 
@@ -122,7 +138,19 @@ func CreatePVC(clientset *kubernetes.Clientset, name string, namespace string, s
 	_, err := clientset.CoreV1().PersistentVolumeClaims(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 
 	if !errors.IsNotFound(err) {
-		return errors.NewAlreadyExists(schema.GroupResource{Group: "core", Resource: "PersistentVolumeClaim"}, name)
+		var userInput string
+		fmt.Printf("persisten volume claim %s already exists. do you want to recreate it? y/n: ", name)
+		fmt.Scanln(&userInput)
+
+		if strings.ToLower(userInput) == "n" {
+			return nil
+		} else if strings.ToLower(userInput) == "y" {
+			err = clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+			if err != nil {
+				return fmt.Errorf("error deleting pvc: %s", err)
+			}
+			time.Sleep(time.Second * 5)
+		}
 	}
 
 	PVCSpec := v1.PersistentVolumeClaim{
@@ -167,15 +195,14 @@ func CreateJob(clientset *kubernetes.Clientset, job batchv1.Job) (jobInterface *
 
 func CreatePod(clientset *kubernetes.Clientset, podspec v1.Pod) (pod *v1.Pod, err error) {
 
-	_, err = clientset.CoreV1().Pods(podspec.Namespace).Get(context.TODO(), podspec.Name, metav1.GetOptions{})
+	pod, err = clientset.CoreV1().Pods(podspec.Namespace).Get(context.TODO(), podspec.Name, metav1.GetOptions{})
 	if !errors.IsNotFound(err) {
-		return pod, errors.NewAlreadyExists(schema.GroupResource{Group: "Batchv1", Resource: "Job"}, podspec.Name)
+		return pod, nil
 	}
 
 	pod, err = clientset.CoreV1().Pods(podspec.Namespace).Create(context.TODO(), &podspec, metav1.CreateOptions{})
 	if err != nil {
 		return
 	}
-
 	return
 }

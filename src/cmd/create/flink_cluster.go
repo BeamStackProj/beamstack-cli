@@ -2,7 +2,6 @@ package create
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/BeamStackProj/beamstack-cli/src/objects"
 	"github.com/BeamStackProj/beamstack-cli/src/types"
@@ -31,7 +30,6 @@ var FlinkClusterCmd = &cobra.Command{
 	Long:  `create a flink cluster`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
 		profile, err := utils.ValidateCluster()
 
 		if err != nil {
@@ -44,9 +42,11 @@ var FlinkClusterCmd = &cobra.Command{
 		}
 
 		namespace := "flink"
-		flinkVersion := strings.Replace(profile.Operators.Flink.Version, ".", "_", 1)
-		flinkImage := fmt.Sprintf("beamstackproj/flink-v%s:latest", flinkVersion)
-		taskmanagerImage := fmt.Sprintf("beamstackproj/flink-harness%s:latest", flinkVersion)
+		flinkVersion := "v1_16"
+		flinkImage := fmt.Sprintf("beamstackproj/flink-%s:latest", flinkVersion)
+		// flinkImage := "localhost:5000/flink-v1_16"
+		taskmanagerImage := fmt.Sprintf("beamstackproj/flink-harness-%s:latest", flinkVersion)
+		// taskmanagerImage := "localhost:5000/harness"
 		ClaimName := fmt.Sprintf("%s-pvc", args[0])
 		fmt.Printf("creating flink cluster %s\n", args[0])
 
@@ -68,9 +68,9 @@ var FlinkClusterCmd = &cobra.Command{
 			ImagePullPolicy: "IfNotPresent",
 			FlinkVersion:    flinkVersion,
 			FlinkConfiguration: map[string]string{
-				"taskmanager.numberOfTaskSlots": string(taskslots),
+				"taskmanager.numberOfTaskSlots": fmt.Sprintf("%d", taskslots),
 			},
-			ServiceAccountName: "flink",
+			ServiceAccount: "flink",
 			PodTemplate: &v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{
@@ -92,6 +92,7 @@ var FlinkClusterCmd = &cobra.Command{
 				},
 			},
 			JobManager: types.JobManagerSpec{
+				Replicas: 1,
 				Resource: types.Resource{
 					Memory: memory,
 					CPU:    cpu,
@@ -150,12 +151,15 @@ var FlinkClusterCmd = &cobra.Command{
 				Namespace: "flink",
 			},
 			spec,
+			"flinkdeployments",
 		)
 
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+
+		fmt.Printf("Flink cluster %s created\n", args[0])
 	},
 }
 

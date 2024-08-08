@@ -16,17 +16,25 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var (
-	DashboardLocalPort  uint16 = 8081
-	DashboardTargetPort uint16 = 8081
-)
-
 // infoCmd represents the info command
 var DashboardCmd = &cobra.Command{
-	Use:   "show",
+	Use:   "dashboard",
 	Short: "opens up grafana dashboard",
 	Long:  `opens up grafana dashboard`,
 	Run: func(cmd *cobra.Command, args []string) {
+		LocalPort, err := cmd.Flags().GetUint16("localport")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		TargetPort, err := cmd.Flags().GetUint16("targetport")
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
 		profile, err := utils.ValidateCluster()
 		if err != nil {
 			fmt.Println(err)
@@ -46,7 +54,7 @@ var DashboardCmd = &cobra.Command{
 
 		svc := v1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-rest", args[0]),
+				Name:      "grafana",
 				Namespace: "monitoring",
 			},
 		}
@@ -76,8 +84,8 @@ var DashboardCmd = &cobra.Command{
 				clientset,
 				types.PortForwardASVCRequest{
 					PortForward: types.PortForward{
-						PodPort:   DashboardTargetPort,
-						LocalPort: DashboardLocalPort,
+						PodPort:   TargetPort,
+						LocalPort: LocalPort,
 						Streams:   stream,
 						StopCh:    stopCh,
 						ReadyCh:   readyCh,
@@ -91,7 +99,7 @@ var DashboardCmd = &cobra.Command{
 			}
 		}()
 
-		println("Port forwarding is ready to get traffic. insert 'q' to stop")
+		println("insert 'q' to exit")
 
 		go func() {
 			var quitC string
@@ -111,6 +119,7 @@ var DashboardCmd = &cobra.Command{
 }
 
 func init() {
-	FlinkClusterCmd.Flags().Uint16Var(&DashboardTargetPort, "targetport", DashboardTargetPort, "target container port")
-	FlinkClusterCmd.Flags().Uint16Var(&DashboardLocalPort, "localport", DashboardLocalPort, "This port will be forwarded to the target port on the cluster")
+	DashboardCmd.Flags().Uint16("targetport", 3000, "target container port")
+	DashboardCmd.Flags().Uint16("localport", 3000, "This port will be forwarded to the target port on the cluster")
+
 }

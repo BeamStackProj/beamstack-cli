@@ -1,13 +1,15 @@
 package types
 
-import v1 "k8s.io/api/core/v1"
+import (
+	v1 "k8s.io/api/core/v1"
+)
 
 type FlinkDeploymentSpec struct {
 	Image              *string             `yaml:"image"`
 	ImagePullPolicy    string              `yaml:"imagePullPolicy"`
 	FlinkVersion       string              `yaml:"flinkVersion"`
 	FlinkConfiguration map[string]string   `yaml:"flinkConfiguration"`
-	ServiceAccountName string              `yaml:"serviceAccountName"`
+	ServiceAccount     string              `yaml:"serviceAccount"`
 	PodTemplate        *v1.PodTemplateSpec `yaml:"podTemplate,omitempty"`
 	JobManager         JobManagerSpec      `yaml:"jobManager"`
 	TaskManager        TaskManagerSpec     `yaml:"taskManager"`
