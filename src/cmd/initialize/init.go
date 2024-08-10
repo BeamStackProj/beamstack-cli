@@ -12,10 +12,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	initLongDesc = utils.LongDesc(`
+		Initialize Beamstack in a new Kubernetes environment, setting up essential configurations and prerequisites.
+		`)
+)
+
 var InitCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize beamstack on cluster",
-	Long:  `Initialize Beamstack in a new Kubernetes environment, setting up essential configurations and prerequisites.`,
+	Long:  initLongDesc,
 	Run:   runInit,
 }
 

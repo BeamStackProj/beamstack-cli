@@ -16,11 +16,18 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// Description and Examples for opening grafana dashboard
+var (
+	openDashboardLongDesc = utils.LongDesc(`
+		This command opens up the GUI for the Grafana Dashbaord.
+		`)
+)
+
 // infoCmd represents the info command
 var DashboardCmd = &cobra.Command{
 	Use:   "dashboard",
 	Short: "opens up grafana dashboard",
-	Long:  `opens up grafana dashboard`,
+	Long:  openDashboardLongDesc,
 	Run: func(cmd *cobra.Command, args []string) {
 		LocalPort, err := cmd.Flags().GetUint16("localport")
 		if err != nil {

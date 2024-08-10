@@ -23,11 +23,18 @@ var (
 	replicas    uint8  = 1
 )
 
+// Description and Examples for creating flink clsuters
+var (
+	flinkLongDesc = utils.LongDesc(`
+		Create a flink cluster with specified requirments.
+		`)
+)
+
 // infoCmd represents the info command
 var FlinkClusterCmd = &cobra.Command{
 	Use:   "flink-cluster",
 	Short: "create a flink cluster",
-	Long:  `create a flink cluster`,
+	Long:  flinkLongDesc,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		profile, err := utils.ValidateCluster()
