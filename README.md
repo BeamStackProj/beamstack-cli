@@ -1,5 +1,5 @@
 # beamstack
-<img src="https://github.com/BeamStackProj/beamstack-cli/blob/main/logo/logo.png" width="300">
+<img src="https://github.com/BeamStackProj/beamstack-cli/blob/main/logo/beamstack.png" width="300">
 ----
 
 beamstack is a revolutionary tool that has been meticulously crafted to simplify and revolutionize 
