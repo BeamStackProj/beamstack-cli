@@ -64,7 +64,7 @@ func GetCurrentContext() (string, error) {
 	// Get the current context
 	currentContext := config.CurrentContext
 	if currentContext == "" {
-		return "", fmt.Errorf("Current Context not found")
+		return "", fmt.Errorf("Current Context not found, please initialize this cluster")
 	}
 
 	return currentContext, nil

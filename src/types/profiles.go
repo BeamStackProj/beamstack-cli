@@ -21,11 +21,7 @@ type Operator struct {
 }
 
 type Monitoring struct {
-	Server struct {
-		Name    string `json:"name"`
-		Version string `json:"version,omitempty"`
-		Url     string `json:"url"`
-	} `json:"server"`
+	Name string `json:"name"`
 }
 
 type Package struct {

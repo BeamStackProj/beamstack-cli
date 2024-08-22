@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/BeamStackProj/beamstack-cli/src/objects"
 	"github.com/BeamStackProj/beamstack-cli/src/types"
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
-	"github.com/BeamStackProj/beamstack-cli/src/utils/objects"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -129,10 +129,6 @@ func runInit(cmd *cobra.Command, args []string) {
 
 	}
 
-	contextsStringMap[currentContext] = Profile.Name
-
-	viper.Set("contexts", contextsStringMap)
-
 	if err := viper.WriteConfig(); err != nil {
 		fmt.Printf("Error writing config file: %v\n", err)
 	}
@@ -145,12 +141,12 @@ func runInit(cmd *cobra.Command, args []string) {
 	}
 
 	progChan := make(chan types.ProgCount)
-	go objects.HandleResource("CustomResourceDefinition", "", "Established", progChan)
+	go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
 	utils.DisplayProgress(progChan, "deploying crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
 	currentOp += 1
 
 	progChan = make(chan types.ProgCount)
-	go objects.HandleResource("Deployment", "cert-manager", "Available", progChan)
+	go objects.HandleResources("Deployment", "cert-manager", "Available", progChan)
 	utils.DisplayProgress(progChan, "creating deployments", fmt.Sprintf("%d/%d", currentOp, totalOps))
 	currentOp += 1
 
@@ -162,7 +158,9 @@ func runInit(cmd *cobra.Command, args []string) {
 	})
 
 	if Flink {
-		if err := objects.CreateNamespace("flink-operator"); err != nil {
+		flinkNamespace := "flink"
+
+		if err := objects.CreateNamespace(flinkNamespace); err != nil {
 			if err != os.ErrExist {
 				fmt.Println(err)
 			}
@@ -170,15 +168,15 @@ func runInit(cmd *cobra.Command, args []string) {
 		}
 
 		fmt.Println("\ninstalling flink operator")
-		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion, "flink-operator", &map[string]interface{}{})
+		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion, flinkNamespace, &map[string]interface{}{})
 
 		progChan := make(chan types.ProgCount)
-		go objects.HandleResource("CustomResourceDefinition", "", "Established", progChan)
+		go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
 		utils.DisplayProgress(progChan, "installing flink", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
 		progChan = make(chan types.ProgCount)
-		go objects.HandleResource("Deployment", "flink-operator", "Available", progChan)
+		go objects.HandleResources("Deployment", flinkNamespace, "Available", progChan)
 		utils.DisplayProgress(progChan, "creating flink deploymens", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
@@ -230,17 +228,26 @@ func runInit(cmd *cobra.Command, args []string) {
 		monitoringhelmPackage := utils.InstallHelmPackage("kube-prometheus-stack", "https://prometheus-community.github.io/helm-charts", "", namespace, values)
 
 		progChan = make(chan types.ProgCount)
-		go objects.HandleResource("CustomResourceDefinition", "", "Established", progChan)
+		go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
 		utils.DisplayProgress(progChan, "validating monitoring crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
 		progChan = make(chan types.ProgCount)
-		go objects.HandleResource("Deployment", namespace, "Available", progChan)
+		go objects.HandleResources("Deployment", namespace, "Available", progChan)
 		utils.DisplayProgress(progChan, "creating monitoring deployments", fmt.Sprintf("%d/%d", currentOp, totalOps))
 		currentOp += 1
 
+		Profile.Monitoring = &types.Monitoring{
+			Name: "kube-prometheus-stack",
+		}
 		Profile.Packages = append(Profile.Packages, monitoringhelmPackage)
 
+	}
+
+	contextsStringMap[currentContext] = Profile.Name
+	viper.Set("contexts", contextsStringMap)
+	if err := viper.WriteConfig(); err != nil {
+		fmt.Printf("Error writing config file: %v\n", err)
 	}
 
 	err = utils.SaveProfile(&Profile)
