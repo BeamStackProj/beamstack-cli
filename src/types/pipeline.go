@@ -1,28 +1,28 @@
 package types
 
 type Pipeline struct {
-	Pipeline  PipelineSpec       `json:"pipeline,omitempty"`
-	Options   *map[string]string `json:"options,omitempty"`
-	Providers *[]TransformSpecs  `json:"providers,omitempty"`
+	Pipeline  PipelineSpec       `yaml:"pipeline,omitempty"`
+	Options   *map[string]string `yaml:"options,omitempty"`
+	Providers *[]TransformSpecs  `yaml:"providers,omitempty"`
 }
 
 type PipelineSpec struct {
-	Type       string           `json:"type,omitempty"`
-	Source     *SourceSinkSpec  `json:"source,omitempty"`
-	Transforms []TransformSpecs `json:"transforms,omitempty"`
-	Sink       *SourceSinkSpec  `json:"sink,omitempty"`
+	Type       string           `yaml:"type,omitempty"`
+	Source     *SourceSinkSpec  `yaml:"source,omitempty"`
+	Transforms []TransformSpecs `yaml:"transforms,omitempty"`
+	Sink       *SourceSinkSpec  `yaml:"sink,omitempty"`
 }
 
 type TransformSpecs struct {
-	Type       string                  `json:"type,omitempty"`
-	Name       *string                 `json:"name,omitempty"`
-	Input      *string                 `json:"input,omitempty"`
-	Config     *map[string]interface{} `json:"config,omitempty"`
-	Transforms *map[string]interface{} `json:"transforms,omitempty"`
-	Windowing  *map[string]interface{} `json:"windowing,omitempty"`
+	Type       string                  `yaml:"type,omitempty"`
+	Name       *string                 `yaml:"name,omitempty"`
+	Input      *string                 `yaml:"input,omitempty"`
+	Config     *map[string]interface{} `yaml:"config,omitempty"`
+	Transforms *map[string]interface{} `yaml:"transforms,omitempty"`
+	Windowing  *map[string]interface{} `yaml:"windowing,omitempty"`
 }
 
 type SourceSinkSpec struct {
-	Type   string                  `json:"type,omitempty"`
-	Config *map[string]interface{} `json:"config,omitempty"`
+	Type   string                  `yaml:"type,omitempty"`
+	Config *map[string]interface{} `yaml:"config,omitempty"`
 }

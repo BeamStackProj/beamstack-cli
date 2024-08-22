@@ -120,7 +120,8 @@ func waitForSpecificResourceCondition(client dynamic.Interface, gvr schema.Group
 		err        error
 		lastStatus string
 		lastReason string
-		lastEvents map[string]string = make(map[string]string)
+		done       bool = false
+		// lastEvents map[string]string = make(map[string]string)
 	)
 
 	if namespace == "" {
@@ -147,7 +148,7 @@ func waitForSpecificResourceCondition(client dynamic.Interface, gvr schema.Group
 				return false, nil
 			}
 
-			eventsUpdated := false
+			// eventsUpdated := false
 
 			for _, cond := range conditions {
 				if condMap, ok := cond.(map[string]interface{}); ok {
@@ -160,10 +161,11 @@ func waitForSpecificResourceCondition(client dynamic.Interface, gvr schema.Group
 							if condStatus != lastStatus || reason != lastReason {
 								lastStatus = condStatus
 								lastReason = reason
-								eventsUpdated = true
-								channel <- fmt.Sprintf("Condition: %s, Status: %s, Reason: %s", condType, condStatus, reason)
+								// eventsUpdated = true
+								channel <- fmt.Sprintf("Condition: %s", condType)
 							}
 							if condStatus == "True" {
+								done = true
 								return true, nil
 							}
 						}
@@ -171,38 +173,41 @@ func waitForSpecificResourceCondition(client dynamic.Interface, gvr schema.Group
 				}
 			}
 
-			// Check for event changes
-			events, found, err := unstructured.NestedSlice(resource.Object, "status", "events")
-			if found && err == nil {
-				for _, event := range events {
-					if eventMap, ok := event.(map[string]interface{}); ok {
-						eventReason := ""
-						if reason, found := eventMap["reason"].(string); found {
-							eventReason = reason
-						}
-						eventMessage := ""
-						if message, found := eventMap["message"].(string); found {
-							eventMessage = message
-						}
-						eventKey := fmt.Sprintf("%s: %s", eventReason, eventMessage)
-						if _, found := lastEvents[eventKey]; !found {
-							eventsUpdated = true
-							lastEvents[eventKey] = eventMessage
-							channel <- fmt.Sprintf("Event: %s, Message: %s", eventReason, eventMessage)
-						}
-					}
-				}
-			}
+			// // Check for event changes
+			// events, found, err := unstructured.NestedSlice(resource.Object, "status", "events")
+			// if found && err == nil {
+			// 	for _, event := range events {
+			// 		if eventMap, ok := event.(map[string]interface{}); ok {
+			// 			eventReason := ""
+			// 			if reason, found := eventMap["reason"].(string); found {
+			// 				eventReason = reason
+			// 			}
+			// 			eventMessage := ""
+			// 			if message, found := eventMap["message"].(string); found {
+			// 				eventMessage = message
+			// 			}
+			// 			eventKey := fmt.Sprintf("%s: %s", eventReason, eventMessage)
+			// 			if _, found := lastEvents[eventKey]; !found {
+			// 				eventsUpdated = true
+			// 				lastEvents[eventKey] = eventMessage
+			// 				channel <- fmt.Sprintf("Event: %s, Message: %s", eventReason, eventMessage)
+			// 			}
+			// 		}
+			// 	}
+			// }
 
-			if !eventsUpdated {
-				return false, nil
-			}
+			// if !eventsUpdated {
+			// 	return false, nil
+			// }
 			return false, nil
 		})
 		if err != nil {
 			return fmt.Errorf("error waiting for %s %s to be %s: %v", gvr.Resource, resource.GetName(), condition, err)
 		}
-		time.Sleep(2 * time.Second)
+		if done {
+			return nil
+		}
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -231,6 +236,7 @@ func waitForResourceCondition(client dynamic.Interface, gvr schema.GroupVersionR
 
 		for _, item := range resourceList.Items {
 			err := wait.PollUntilContextTimeout(context.Background(), time.Second*2, time.Minute*10, true, func(context.Context) (bool, error) {
+
 				var (
 					res *unstructured.Unstructured
 					err error

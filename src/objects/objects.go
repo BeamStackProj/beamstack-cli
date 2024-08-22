@@ -126,7 +126,6 @@ func CreateDynamicResource(typeMeta metav1.TypeMeta, metaData metav1.ObjectMeta,
 
 	_, err = resourceInterface.Create(context.TODO(), unstructuredObj, metav1.CreateOptions{})
 	if err != nil {
-		fmt.Println("What IS THE FUKING PROBLEM HERE")
 		return err
 	}
 

@@ -32,7 +32,7 @@ var (
 
 // infoCmd represents the info command
 var FlinkClusterCmd = &cobra.Command{
-	Use:   "flink-cluster",
+	Use:   "flink [NAME]",
 	Short: "create a flink cluster",
 	Long:  flinkLongDesc,
 	Args:  cobra.ExactArgs(1),
@@ -51,9 +51,7 @@ var FlinkClusterCmd = &cobra.Command{
 		namespace := "flink"
 		flinkVersion := "v1_16"
 		flinkImage := fmt.Sprintf("beamstackproj/flink-%s:latest", flinkVersion)
-		// flinkImage := "localhost:5000/flink-v1_16"
-		taskmanagerImage := fmt.Sprintf("beamstackproj/flink-harness-%s:latest", flinkVersion)
-		// taskmanagerImage := "localhost:5000/harness"
+		taskmanagerImage := fmt.Sprintf("beamstackproj/beam-harness-%s:latest", flinkVersion)
 		ClaimName := fmt.Sprintf("%s-pvc", args[0])
 		fmt.Printf("creating flink cluster %s\n", args[0])
 
