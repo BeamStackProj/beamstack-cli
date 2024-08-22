@@ -11,11 +11,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Long Description and Example initizalization
+var (
+	infoLongDesc = utils.LongDesc(`
+		This command displays detailed information about specified resources such as clusters.
+		`)
+)
+
 // infoCmd represents the info command
 var InfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Pallete that contains information based commands",
-	Long:  `Pallete that contains information based commands`,
+	Long:  infoLongDesc,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, err := utils.GetCurrentContext()
 		if err != nil {

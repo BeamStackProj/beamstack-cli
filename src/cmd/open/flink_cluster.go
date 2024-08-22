@@ -16,11 +16,18 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// Description and Examples for opening grafana dashboard
+var (
+	openFlinkClusterLongDesc = utils.LongDesc(`
+		This command opens up the GUI for the flink clusters and forward it to a specified local port.
+		`)
+)
+
 // infoCmd represents the info command
 var FlinkClusterCmd = &cobra.Command{
 	Use:   "flink",
 	Short: "opens up flink cluster ui",
-	Long:  `opens up flink cluster ui`,
+	Long:  openFlinkClusterLongDesc,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		LocalPort, err := cmd.Flags().GetUint16("localport")

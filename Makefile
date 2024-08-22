@@ -35,12 +35,12 @@ dryinstall: go-build
 
 .PHONY: install
 install: uninstall go-build
-	@sudo mkdir ~/.$(BINARY_NAME) -p
-	@sudo mkdir ~/.$(BINARY_NAME)/config -p
-	@sudo mkdir ~/.$(BINARY_NAME)/profiles -p
+	@sudo mkdir -p ~/.$(BINARY_NAME)
+	@sudo mkdir -p ~/.$(BINARY_NAME)/config
+	@sudo mkdir -p ~/.$(BINARY_NAME)/profiles
 	@sudo cp ./tests/config.json ~/.$(BINARY_NAME)/config/config.json
 	@sudo mv $(SOURCE_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
 	@sudo chmod -R 777 ~/.$(BINARY_NAME)
 	@echo "✅ $(BINARY_NAME) installed..!"
 	@echo
-	make clean
+	@$(MAKE) clean

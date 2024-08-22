@@ -5,15 +5,29 @@ import (
 	"time"
 
 	info_handler "github.com/BeamStackProj/beamstack-cli/src/handlers/info"
+	"github.com/BeamStackProj/beamstack-cli/src/utils"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 )
 
+var (
+	clusterLongDesc = utils.LongDesc(`
+		This command fetches detailed information about the Kubernetes cluster,
+  	including the status of each node and the overall health of the cluster.
+		`)
+
+	clusterExample = utils.Examples(`
+  # Get cluster information
+  beamstack info cluster
+	`)
+)
+
 // infoCmd represents the info command
 var ClusterCmd = &cobra.Command{
-	Use:   "cluster",
-	Short: "get information the kubernetes cluster",
-	Long:  `Cluster information including nodes, and current workloads`,
+	Use:     "cluster",
+	Short:   "get information the kubernetes cluster",
+	Long:    clusterLongDesc,
+	Example: clusterExample,
 	Run: func(cmd *cobra.Command, args []string) {
 		clusterHealth, err := info_handler.Health()
 

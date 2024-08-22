@@ -25,6 +25,12 @@ import (
 )
 
 var (
+	deployLongDesc = utils.LongDesc(`
+		Deploy an Apache Beam pipeline on a specified Operator.
+		`)
+)
+
+var (
 	flinkCluster          string       = ""
 	PVCMountPath          string       = "/pvc"
 	JobName               string       = "beamjob-asc"
@@ -45,7 +51,7 @@ type FileInfo struct {
 var PipelineCmd = &cobra.Command{
 	Use:   "pipeline [FILE]",
 	Short: "Deploy an Apache Beam pipeline",
-	Long:  "Deploy an Apache Beam pipeline on a specified Operator.",
+	Long:  deployLongDesc,
 	Args:  cobra.ExactArgs(1),
 	Run:   DeployPipeline,
 }
