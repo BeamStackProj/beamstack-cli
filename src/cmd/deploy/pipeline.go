@@ -247,7 +247,9 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		CleanPipelineFilename = strings.Replace(pipelineFilename, "/tmp", "", 1)
+		splits := strings.Split(pipelineFilename, "/")
+
+		CleanPipelineFilename = splits[len(splits)-1]
 
 	}
 
