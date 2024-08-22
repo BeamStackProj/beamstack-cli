@@ -51,7 +51,7 @@ var PipelineCmd = &cobra.Command{
 }
 
 func init() {
-	PipelineCmd.Flags().StringVar(&flinkCluster, "flinkCluster", flinkCluster, "Specify the Flink cluster to deploy the Apache Beam pipeline.")
+	PipelineCmd.Flags().StringVar(&flinkCluster, "flink", flinkCluster, "Specify the Flink cluster to deploy the Apache Beam pipeline.")
 	PipelineCmd.Flags().StringVar(&PVCMountPath, "pvcMountPath", PVCMountPath, "Mount path for the Persistent Volume Claim. Note: The mount path is set to 'pvc' during cluster creation, so changing this may cause issues.")
 	PipelineCmd.Flags().StringVar(&JobName, "jobname", JobName, "Specify the name of the pipeline job.")
 	PipelineCmd.Flags().Uint8Var(&Parallelism, "parallelism", Parallelism, "Set the pipeline parallelism.")
@@ -82,6 +82,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 
 	uploadList := []FileInfo{}
 	downloadList := []FileInfo{}
+	resultsFolder := fmt.Sprintf("%s-pipeline", JobName)
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -161,17 +162,18 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 				var resultPath string
 
 				if len(splits) > 1 {
-					resultPath = filepath.Join(splits[len(splits)-2], splits[len(splits)-1])
+					resultPath = filepath.Join(resultsFolder, splits[len(splits)-2], splits[len(splits)-1])
 				} else if len(splits) == 1 {
-					resultPath = splits[len(splits)-1]
+					resultPath = filepath.Join(resultsFolder, splits[len(splits)-1])
 				}
 
 				(*sink.Config)["path"] = filepath.Join(PVCMountPath, resultPath)
 
-				downloadList = append(downloadList, FileInfo{Src: filepath.Join(PVCMountPath, resultPath), Dest: path})
+				downloadList = append(downloadList, FileInfo{Src: filepath.Join(PVCMountPath, resultsFolder), Dest: path})
 			}
 		}
 
+		hasResuls := false
 		for _, tf := range pipeline.Pipeline.Transforms {
 			if strings.HasPrefix(strings.ToLower(tf.Type), "readfrom") {
 				if path, ok := (*tf.Config)["path"].(string); ok {
@@ -197,16 +199,25 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 					var resultPath string
 
 					if len(splits) > 1 {
-						resultPath = filepath.Join(splits[len(splits)-2], splits[len(splits)-1])
+						resultPath = filepath.Join(resultsFolder, splits[len(splits)-2], splits[len(splits)-1])
 					} else if len(splits) == 1 {
-						resultPath = splits[len(splits)-1]
+						resultPath = filepath.Join(resultsFolder, splits[len(splits)-1])
 					}
 
 					(*tf.Config)["path"] = filepath.Join(PVCMountPath, resultPath)
-
-					downloadList = append(downloadList, FileInfo{Src: filepath.Join(PVCMountPath, resultPath), Dest: path})
+					hasResuls = true
 				}
 			}
+		}
+		if hasResuls {
+			homeDir, _ := os.UserHomeDir()
+			outDir := filepath.Join(homeDir, "beamstack-pipelines", resultsFolder)
+			err = os.MkdirAll(outDir, 0777)
+			if err != nil {
+				fmt.Println("Error creating directory:", err)
+				return
+			}
+			downloadList = append(downloadList, FileInfo{Src: filepath.Join(PVCMountPath, resultsFolder), Dest: outDir})
 		}
 
 		fmt.Println("Performing data migration!")
@@ -231,6 +242,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		}
 
 		CleanPipelineFilename = strings.Replace(pipelineFilename, "/tmp", "", 1)
+
 	}
 
 	if err := utils.MigrateFilesToContainer(
@@ -244,6 +256,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		return
 	}
+	BackOffLimit := int32(1)
 	pipelineJob, err := objects.CreateJob(
 		clientset,
 		batchv1.Job{
@@ -252,6 +265,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 				Namespace: "flink",
 			},
 			Spec: batchv1.JobSpec{
+				BackoffLimit: &BackOffLimit,
 				Template: v1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: map[string]string{"app": JobName},
@@ -260,15 +274,13 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 						RestartPolicy: "Never",
 						Containers: []v1.Container{
 							{
-								Name:  "beam-pipeline",
-								Image: "beamstackproj/beam-harness-v1_16:latest",
-								// Image:   "localhost:5000/harness",
+								Name:    "beam-pipeline",
+								Image:   "beamstackproj/beam-harness-v1_16:latest",
 								Command: []string{"python"},
 								Args: []string{
 									"-m",
 									"apache_beam.yaml.main",
 									fmt.Sprintf("--pipeline_spec_file=%s", filepath.Join(PVCMountPath, CleanPipelineFilename)),
-									fmt.Sprintf("--pipeline_spec_file=%s", "pipeline/pipeline-nonlinear-01.yaml"),
 									"--runner=FlinkRunner",
 									fmt.Sprintf("--flink_master=%s-rest.flink.svc.cluster.local:8081", flinkCluster),
 									fmt.Sprintf("--job_name=%s", JobName),
@@ -316,7 +328,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 	fmt.Println("Pipeline deployed!")
 
 	if Wait {
-		donChan := make(chan string, 1)
+		donChan := make(chan string)
 		go objects.HandleSpecificResource(schema.GroupVersionResource{
 			Group:    "batch",
 			Version:  "v1",
@@ -325,10 +337,9 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 
 		for i := range donChan {
 			fmt.Println(i)
-			fmt.Printf("pipeline conditions %s", pipelineJob.Status.Conditions)
 		}
 
-		if Migrate {
+		if Migrate && downloadList != nil {
 			fmt.Println("migrating pipeline results!")
 			for _, path := range downloadList {
 				utils.MigrateFilesFromContainer(clientset,
@@ -338,13 +349,18 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 						DestPath: path.Dest,
 					},
 				)
+				fmt.Printf("Copied pipeline results to path:  %s", path.Dest)
 			}
 		}
 
 		fmt.Println("Pipeline is done!")
-		clientset.BatchV1().Jobs("flink").Delete(cmd.Context(), pipelineJob.Name, metav1.DeleteOptions{})
+		fg := metav1.DeletePropagationBackground
+
+		clientset.BatchV1().Jobs("flink").Delete(cmd.Context(), pipelineJob.Name, metav1.DeleteOptions{PropagationPolicy: &fg})
 	}
-	clientset.CoreV1().Pods("flink").Delete(cmd.Context(), MigrationPod.Name, metav1.DeleteOptions{})
+
+	fg := metav1.DeletePropagationBackground
+	clientset.CoreV1().Pods("flink").Delete(cmd.Context(), MigrationPod.Name, metav1.DeleteOptions{PropagationPolicy: &fg})
 
 }
 
