@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="./assets/beamstack-logo.png">
-    <img width="300" height="260" src="./assets/beamstack-logo.png">
+    <img width="400" height="100" src="./assets/beamstack-logo.png">
   </picture>
   <h1 align="center" style="font-size: 24px;">Kubernetes Framework for deploying ML and GenAI Apache Beam workflows</h1>
 </p>  
@@ -70,11 +70,10 @@
 --- 
 
 ## **Components of Beamstack** 
-<ul>
-  <li>Beamstack CLI</li>
-  <li>Beamstack Custom Transforms</li>
-  <li>Apache Beam YAML</li>
-</ul>  
+
+- Beamstack CLI
+- Beamstack Custom Transforms
+- Apache Beam YAML 
 
 ---
 
@@ -162,7 +161,7 @@ beamstack [command] --help
 Get updates on Beamstack's development and chat with project maintainers, contributors, and community members  
 - Visit the [Community Page](https://beamstack.netlify.app/community/)
 - Raise feature requests, suggest enhancements, and report bugs in our [GitHub Issues](https://github.com/BeamStackProj/beamstack-cli/issues)
-- Articles, Howtos, Tutorials - [Beamstack Blogs](https://beamstack.netlify.app/blog/)
+- Articles, How-Tos, Tutorials - [Beamstack Blogs](https://beamstack.netlify.app/blog/)
 
 ### :handshake: Contribute
  
