@@ -20,21 +20,6 @@
 
 ## **Beamstack Features**
 
-<style>
-  details {
-    margin-bottom: 10px;
-  }
-  details summary {
-    cursor: pointer;
-    font-weight: bold;
-  }
-  details ul {
-    margin: 0;
-    padding-left: 20px;
-    list-style-type: disc;
-  }
-</style>
-
 <details>
   <summary><b>Simplified ML Workflow Deployment</b></summary>
   <ul>
@@ -83,16 +68,6 @@
 <p align="center"><img src="./assets/beamstack-arch.png"></p>
   
 --- 
-
-<style>
-  ul {
-    padding-left: 0;
-    list-style-position: inside;
-  }
-  li {
-    margin-left: 0;
-  }
-</style>
 
 ## **Components of Beamstack** 
 <ul>
