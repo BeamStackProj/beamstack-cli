@@ -1,17 +1,21 @@
 <p align="center">
   <picture>
     <source srcset="./assets/beamstack-logo.png">
-    <img width="400" height="150" src="./assets/beamstack-logo.png">
+    <img width="400" height="120" src="./assets/beamstack-logo.png">
   </picture>
   <h1 align="center" style="font-size: 24px;">Kubernetes Framework for deploying ML and GenAI Apache Beam workflows</h1>
 </p>  
 
-<p></p>
+<p> </p>
 
 <p align="center">
+  <br>
   <a href="https://beamstack.netlify.app/docs/" rel="nofollow"><strong>Explore Beamstack Documentation »</strong></a>
+  <br>
   <a href="https://beamstack.netlify.app/community/"><strong>Join Beamstack Community »</strong></a>
+  <br>
   <a href="https://beamstack.netlify.app/blog/"><strong>Explore Blogs »</strong></a>
+  <br>
   <a href="https://discord.gg/fYNnNVaEFK"><strong>Join Discord Channel</strong></a>
 </p>
 
@@ -121,7 +125,7 @@ beamstack --help
 
 ---
 
-## **Support, Contribution, and Community**
+## :muscle: **Support, Contribution, and Community**
  
 ### :busts_in_silhouette: Community
  
