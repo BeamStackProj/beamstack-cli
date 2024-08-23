@@ -1,33 +1,124 @@
-# beamstack
-<img src="https://github.com/BeamStackProj/beamstack-cli/blob/main/logo/beamstack.png" width="300">
-----
+<p align="center">
+  <picture>
+    <source srcset="./assets/beamstack-logo.png">
+    <img width="400" height="100" src="./assets/beamstack-logo.png">
+  </picture>
+  <h1 align="center" style="font-size: 24px;">Kubernetes Framework for deploying ML and GenAI Apache Beam workflows</h1>
+</p>  
 
-beamstack is a revolutionary tool that has been meticulously crafted to simplify and revolutionize 
-the deployment of machine learning (ML) workflows on [Kubernetes](https://kubernetes.io/docs/concepts/overview/). It offers a holistic solution by 
-introducing abstraction layers that streamline the deployment of diverse components 
-of ML pipelines, data processing workflows, and deployment infrastructure.
+<p align="center">
+  <a href="https://beamstack.netlify.app/docs/" rel="nofollow"><strong>Explore Beamstack Documentation »</strong></a>
+  <a href="https://beamstack.netlify.app/community/"><strong>Join Beamstack Community »</strong></a>
+  <a href="https://beamstack.netlify.app/blog/"><strong>Explore Blogs »</strong></a>
+  <a href="https://discord.gg/fYNnNVaEFK"><strong>Join Discord Channel</strong></a>
+</p>
 
+</p>
+<p align="center">
+<a href="https://discord.gg/fYNnNVaEFK"><img src="https://img.shields.io/badge/Join%20us%20on-Discord-e01563.svg" alt="Join Discord"></a>
+<a href="http://golang.org"><img src="https://img.shields.io/badge/Made%20with-Go-1f425f.svg" alt="made-with-Go"></a>
 
-At the heart of beamstack's capabilities lie Kubernetes Custom Resource Definitions (CRDs). These CRDs 
-serve as a powerful mechanism for extending the Kubernetes API, enabling the seamless integration 
-of ML-specific resources into the Kubernetes ecosystem. Through this innovative approach, 
-beamstack empowers users to leverage the robust features and functionalities of 
-Kubernetes while unlocking the immense potential of ML.
+## **Beamstack Features**
 
-----
+<details>
+  <summary><b>Simplified ML Workflow Deployment:</b></summary>
+  <ul>
+    <li>Beamstack simplifies the deployment of machine learning workflows on Kubernetes.</li>
+  </ul>
+</details>
 
-## minikube
-```sh
+<details>
+  <summary><b>Holistic Solution:</b></summary>
+  <ul>
+    <li>Beamstack offers an all-encompassing solution for managing machine learning pipelines, data processing workflows, and deployment infrastructure.</li>
+  </ul>
+</details>
+
+<details>
+  <summary><b>Abstraction Layers:</b></summary>
+  <ul>
+    <li>Beamstack introduces abstraction layers that streamline the deployment of Apache Beam Pipelines in Kubernetes.</li>
+  </ul>
+</details>
+
+<details>
+  <summary><b>Leveraged Kubernetes Custom Resource Definitions (CRDs):</b></summary>
+  <ul>
+    <li>Beamstack uses Kubernetes CRDs to extend the Kubernetes API, allowing smooth integration of machine learning-specific resources.</li>
+  </ul>
+</details>
+
+<details>
+  <summary><b>Seamless Provisioning of Spark and Flink Clusters in Kubernetes:</b></summary>
+  <ul>
+    <li>Beamstack incorporates features that spin up spark and flink clusters in Kubernetes for running Apache Beam Jobs</li>
+  </ul>
+</details>
+
+<details>
+  <summary><b>Easily Monitor and Visualize Deployed Workflows:</b></summary>
+  <ul>
+    <li>Beamstack seamlessly integrates with Prometheus and Grafana to visualize the states of the deployed workflows in real time.</li>
+  </ul>
+</details>  
+  
+---  
+
+## **Architecture of beamstack** 
+<p align="center"><img src="./assets/beamstack-arch.png"></p>
+  
+--- 
+
+## **Components of Beamstack** 
+
+- Beamstack CLI
+- Beamstack Custom Transforms
+- Apache Beam YAML 
+- Kubernetes
+- Monitoring
+
+---
+
+## **Installation**  
+
+### Setup Kubernetes cluster:  
+To be able to work with beamstack-cli, an active Kubernetes cluster is required.  
+
+A local Kubernetes cluster can be setup using minikube.  
+  
+```bash
 minikube delete && minikube start --kubernetes-version=v1.23.0 --memory=6g --bootstrapper=kubeadm --extra-config=kubelet.authentication-token-webhook=true --extra-config=kubelet.authorization-mode=Webhook --extra-config=scheduler.bind-address=0.0.0.0 --extra-config=controller-manager.bind-address=0.0.0.0
-```
-## To start using beamstack
+``` 
 
-Basic to advanced knowledge on kubernetes is advised. 
-
-## Installing beamstack
-
-```
+### Clone beamstack-cli resources:
+   
+```bash
 git clone https://github.com/BeamStackProj/beamstack-cli.git
+```  
+
+### Install beamstack-cli:  
+  
+```bash
 cd beamstack-cli
 make install
 ```
+
+---
+## **Beamstack Technology**  
+
+<p align="center"><img src="./assets/beamstack-tech.png"></p>
+
+---
+
+## **Support, Contribution, and Community**
+ 
+### :busts_in_silhouette: Community
+ 
+Get updates on Beamstack's development and chat with project maintainers, contributors, and community members  
+- Visit the [Community Page](https://beamstack.netlify.app/community/)
+- Raise feature requests, suggest enhancements, and report bugs in our [GitHub Issues](https://github.com/BeamStackProj/beamstack-cli/issues)
+- Articles, How-Tos, Tutorials - [Beamstack Blogs](https://beamstack.netlify.app/blog/)
+
+### :handshake: Contribute
+ 
+Take a look at our [contributing guidelines](https://beamstack.netlify.app/docs/contribution-guidelines) for information on how to open issues, adhere to coding standards, and understand our development processes. We greatly value your contribution.
