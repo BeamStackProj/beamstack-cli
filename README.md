@@ -1,15 +1,21 @@
 <p align="center">
   <picture>
     <source srcset="./assets/beamstack-logo.png">
-    <img width="400" height="100" src="./assets/beamstack-logo.png">
+    <img width="400" height="120" src="./assets/beamstack-logo.png">
   </picture>
   <h1 align="center" style="font-size: 24px;">Kubernetes Framework for deploying ML and GenAI Apache Beam workflows</h1>
 </p>  
 
+<p> </p>
+
 <p align="center">
+  <br>
   <a href="https://beamstack.netlify.app/docs/" rel="nofollow"><strong>Explore Beamstack Documentation »</strong></a>
+  <br>
   <a href="https://beamstack.netlify.app/community/"><strong>Join Beamstack Community »</strong></a>
+  <br>
   <a href="https://beamstack.netlify.app/blog/"><strong>Explore Blogs »</strong></a>
+  <br>
   <a href="https://discord.gg/fYNnNVaEFK"><strong>Join Discord Channel</strong></a>
 </p>
 
@@ -64,10 +70,44 @@
   
 ---  
 
-## **Architecture of beamstack** 
+## **Architecture** 
 <p align="center"><img src="./assets/beamstack-arch.png"></p>
   
 --- 
+
+## **Installation**  
+
+### 1. Prerequisite
+To be able to work with beamstack-cli, an active Kubernetes cluster is required. Before you begin 
+setup a local Kubernetes cluster using [minikube](https://minikube.sigs.k8s.io/docs/start)
+
+### 2. Start Kubernetes cluster:  
+```bash
+minikube delete && minikube start --kubernetes-version=v1.23.0 --memory=6g --bootstrapper=kubeadm --extra-config=kubelet.authentication-token-webhook=true --extra-config=kubelet.authorization-mode=Webhook --extra-config=scheduler.bind-address=0.0.0.0 --extra-config=controller-manager.bind-address=0.0.0.0
+``` 
+
+### 3. Clone beamstack-cli repository:
+   
+```bash
+git clone https://github.com/BeamStackProj/beamstack-cli.git
+```  
+
+### 4. Install beamstack-cli:  
+  
+```bash
+cd beamstack-cli
+make install
+```
+
+---
+
+### 5. Verify beamstack installation:  
+  
+```bash
+beamstack --help
+```
+
+---
 
 ## **Components of Beamstack** 
 
@@ -79,38 +119,13 @@
 
 ---
 
-## **Installation**  
-
-### Setup Kubernetes cluster:  
-To be able to work with beamstack-cli, an active Kubernetes cluster is required.  
-
-A local Kubernetes cluster can be setup using minikube.  
-  
-```bash
-minikube delete && minikube start --kubernetes-version=v1.23.0 --memory=6g --bootstrapper=kubeadm --extra-config=kubelet.authentication-token-webhook=true --extra-config=kubelet.authorization-mode=Webhook --extra-config=scheduler.bind-address=0.0.0.0 --extra-config=controller-manager.bind-address=0.0.0.0
-``` 
-
-### Clone beamstack-cli resources:
-   
-```bash
-git clone https://github.com/BeamStackProj/beamstack-cli.git
-```  
-
-### Install beamstack-cli:  
-  
-```bash
-cd beamstack-cli
-make install
-```
-
----
 ## **Beamstack Technology**  
 
 <p align="center"><img src="./assets/beamstack-tech.png"></p>
 
 ---
 
-## **Support, Contribution, and Community**
+## :muscle: **Support, Contribution, and Community**
  
 ### :busts_in_silhouette: Community
  
