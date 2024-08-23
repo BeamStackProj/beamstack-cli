@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="./assets/beamstack-logo.png">
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/beamstack-logo.png">
     <img width="400" height="100" src="./assets/beamstack-logo.png">
   </picture>
   <h1 align="center" style="font-size: 24px;">Kubernetes Framework for deploying ML and GenAI Apache Beam workflows</h1>
