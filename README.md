@@ -21,14 +21,14 @@
 ## **Beamstack Features**
 
 <details>
-  <summary><b>Simplified ML Workflow Deployment</b></summary>
+  <summary><b>Simplified ML Workflow Deployment:</b></summary>
   <ul>
     <li>Beamstack simplifies the deployment of machine learning workflows on Kubernetes.</li>
   </ul>
 </details>
 
 <details>
-  <summary><b>Holistic Solution</b></summary>
+  <summary><b>Holistic Solution:</b></summary>
   <ul>
     <li>Beamstack offers an all-encompassing solution for managing machine learning pipelines, data processing workflows, and deployment infrastructure.</li>
   </ul>
