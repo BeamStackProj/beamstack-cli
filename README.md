@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/beamstack-logo.png">
+    <source srcset="./assets/beamstack-logo.png">
     <img width="400" height="100" src="./assets/beamstack-logo.png">
   </picture>
   <h1 align="center" style="font-size: 24px;">Kubernetes Framework for deploying ML and GenAI Apache Beam workflows</h1>
@@ -37,7 +37,7 @@
 <details>
   <summary><b>Abstraction Layers:</b></summary>
   <ul>
-    <li>Beamstack introduces abstraction layers that streamline the deployment of various components within ML pipelines.</li>
+    <li>Beamstack introduces abstraction layers that streamline the deployment of Apache Beam Pipelines in Kubernetes.</li>
   </ul>
 </details>
 
@@ -49,9 +49,9 @@
 </details>
 
 <details>
-  <summary><b>Seamless Integration with Kubernetes:</b></summary>
+  <summary><b>Seamless Provisioning of Spark and Flink Clusters in Kubernetes:</b></summary>
   <ul>
-    <li>Beamstack empowers users to leverage Kubernetes' features while incorporating machine learning capabilities into the Kubernetes ecosystem.</li>
+    <li>Beamstack incorporates features that spin up spark and flink clusters in Kubernetes for running Apache Beam Jobs</li>
   </ul>
 </details>
 
@@ -74,6 +74,8 @@
 - Beamstack CLI
 - Beamstack Custom Transforms
 - Apache Beam YAML 
+- Kubernetes
+- Monitoring
 
 ---
 
@@ -100,59 +102,13 @@ git clone https://github.com/BeamStackProj/beamstack-cli.git
 cd beamstack-cli
 make install
 ```
----  
 
-## **Examples of beamstack commands** 
+---
+## **Beamstack Technology**  
 
-### Initialize a Kubernetes Cluster with Beamstack & Monitoring tools:  
+<p align="center"><img src="./assets/beamstack-tech.png"></p>
 
-```bash
-beamstack init -m
-```  
-  
-### Get the current kubernetes cluster context and profile info:  
-
-```bash
-beamstack info
-```  
-
-### Display the name, status and age of a cluster:  
-
-```bash
-beamstack info cluster
-```  
-
-### Create a runner cluster:  
-
-```bash
-beamstack create [runner-cluster] [cluster-name]
-```  
-
-### Open runner UI:  
-
-```bash
-beamstack open [runner] [runner-cluster-name]
-```  
-
-### Deploy a pipeline:  
-
-```bash
-beamstack deploy pipeline [FILE] [flags]
-```  
-
-### Create a vector store:  
-
-```bash
-beamstack create vector-store --type=elasticsearch
-```  
-
-### Get help:  
-
-```bash
-beamstack --help  
-
-beamstack [command] --help
-```  
+---
 
 ## **Support, Contribution, and Community**
  
