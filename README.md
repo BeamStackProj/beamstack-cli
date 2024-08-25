@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source srcset="./assets/beamstack-logo.png">
+    <source srcset="./assets/beamstack.png">
     <img width="400" height="120" src="./assets/beamstack.png">
   </picture>
   <h1 align="center" style="font-size: 24px;">Kubernetes Framework for deploying ML and GenAI Apache Beam workflows</h1>
