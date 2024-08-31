@@ -56,64 +56,6 @@ func HandleSpecificResource(gvr schema.GroupVersionResource, name, namespace, co
 	waitForSpecificResourceCondition(dynamicClient, gvr, namespace, condition, name, channel)
 }
 
-// func waitForSpecificResourceCondition(client dynamic.Interface, gvr schema.GroupVersionResource, namespace string, condition string, name string, channel *chan string) error {
-// 	var (
-// 		resource   *unstructured.Unstructured
-// 		err        error
-// 		lastStatus string
-// 		lastReason string
-// 	)
-
-// 	if namespace == "" {
-// 		namespace = "default"
-// 	}
-
-// 	resource, err = client.Resource(gvr).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	for {
-// 		err = wait.PollUntilContextTimeout(context.Background(), 2*time.Second, 10*time.Minute, true, func(ctx context.Context) (bool, error) {
-// 			resource, err = client.Resource(gvr).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-// 			if err != nil {
-// 				return false, err
-// 			}
-
-// 			conditions, found, err := unstructured.NestedSlice(resource.Object, "status", "conditions")
-// 			if err != nil || !found {
-// 				return false, nil
-// 			}
-
-// 			for _, cond := range conditions {
-// 				if condMap, ok := cond.(map[string]interface{}); ok {
-// 					if condType, found := condMap["type"].(string); found && condType == condition {
-// 						if condStatus, found := condMap["status"].(string); found {
-// 							reason := ""
-// 							if condReason, found := condMap["reason"].(string); found {
-// 								reason = condReason
-// 							}
-// 							if condStatus != lastStatus || reason != lastReason {
-// 								lastStatus = condStatus
-// 								lastReason = reason
-// 								*channel <- fmt.Sprintf("Status: %s, Reason: %s", condStatus, reason)
-// 							}
-// 							if condStatus == "True" {
-// 								return true, nil
-// 							}
-// 						}
-// 					}
-// 				}
-// 			}
-// 			return false, nil
-// 		})
-// 		if err != nil {
-// 			fmt.Printf("Error waiting for %s %s to be %s: %v\n", gvr.Resource, resource.GetName(), condition, err)
-// 		}
-// 		time.Sleep(2 * time.Second)
-// 	}
-// }
-
 func waitForSpecificResourceCondition(client dynamic.Interface, gvr schema.GroupVersionResource, namespace string, condition string, name string, channel chan string) error {
 	var (
 		resource   *unstructured.Unstructured

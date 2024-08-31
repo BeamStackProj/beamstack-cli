@@ -12,7 +12,7 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 )
 
-func InstallHelmPackage(name string, url string, version string, namespace string, values *map[string]interface{}) (helmPackage types.Package) {
+func InstallHelmPackage(name string, index string, url string, version string, namespace string, values *map[string]interface{}) (helmPackage types.Package) {
 	// Set up Helm action configuration
 	helmPackage = types.Package{
 		Name:    name,
@@ -52,12 +52,18 @@ func InstallHelmPackage(name string, url string, version string, namespace strin
 		panic(err.Error())
 	}
 
-	// Install the Operator
+	err = updateHelmRepositories()
+	if err != nil {
+		fmt.Println("error updating helm repo")
+		fmt.Println(err)
+	}
 	install := action.NewInstall(actionConfig)
 	install.ReleaseName = name
 	install.Namespace = namespace
-
-	chartPath, err := install.LocateChart(name+"/"+name, settings)
+	if index == "" {
+		index = name
+	}
+	chartPath, err := install.LocateChart(name+"/"+index, settings)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -82,4 +88,41 @@ func InstallHelmPackage(name string, url string, version string, namespace strin
 		panic(err.Error())
 	}
 	return
+}
+
+func updateHelmRepositories() error {
+	settings := cli.New()
+
+	// Load the existing repositories file
+	repoFile := settings.RepositoryConfig
+	file, err := repo.LoadFile(repoFile)
+	if err != nil {
+		return fmt.Errorf("failed to load repository file: %w", err)
+	}
+
+	// If no repositories are found, return early
+	if len(file.Repositories) == 0 {
+		fmt.Println("No repositories found in the Helm configuration.")
+		return nil
+	}
+	// Iterate over each repository entry and update the index
+	for _, repoEntry := range file.Repositories {
+		chartRepo, err := repo.NewChartRepository(repoEntry, getter.All(settings))
+		if err != nil {
+			return fmt.Errorf("failed to create chart repository for %s: %w", repoEntry.Name, err)
+		}
+
+		// Download the latest index file
+		_, err = chartRepo.DownloadIndexFile()
+		if err != nil {
+			return fmt.Errorf("failed to update repository %s: %w", repoEntry.Name, err)
+		}
+	}
+
+	// Write the updated repositories back to the file
+	if err := file.WriteFile(repoFile, 0644); err != nil {
+		return fmt.Errorf("failed to write updated repository file: %w", err)
+	}
+
+	return nil
 }
