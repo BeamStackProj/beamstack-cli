@@ -109,12 +109,6 @@ func CreateDynamicResource(typeMeta metav1.TypeMeta, metaData metav1.ObjectMeta,
 		return fmt.Errorf("%s %s already exists", typeMeta.Kind, metaData.Name)
 	}
 
-	// r := resourceStruct{
-	// 	TypeMeta:   _type,
-	// 	ObjectMeta: metaData,
-	// 	Spec:       specs,
-	// }
-	// flinkDeployment := types.FlinkDeploymentSpec
 	unstructuredObj, err := toUnstructured(&resourceStruct{
 		TypeMeta:   typeMeta,
 		ObjectMeta: metaData,

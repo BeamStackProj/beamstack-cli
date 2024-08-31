@@ -17,4 +17,5 @@ var CreateCmd = &cobra.Command{
 func init() {
 
 	CreateCmd.AddCommand(FlinkClusterCmd)
+	CreateCmd.AddCommand(ElasticSearchCmd)
 }

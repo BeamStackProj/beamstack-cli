@@ -31,12 +31,13 @@ var (
 	DefaultOperator string = "flink"
 	FlinkVersion    string = "1.8.0"
 	SparkVersion    string = "latest"
+	elasticsearch   bool   = false
 	monitoring      bool   = false
 	Flink           bool   = false
 	Spark           bool   = false
 	operators       types.Operator
 	force           bool = false
-	totalOps        int  = 6
+	totalOps        int  = 8
 	currentOp       int  = 1
 )
 
@@ -50,7 +51,8 @@ func init() {
 	InitCmd.Flags().BoolVarP(&Flink, "flink", "F", Flink, "If specified, flink is installed.")
 	InitCmd.Flags().BoolVarP(&Spark, "spark", "S", Spark, "If specified, Spark is installed.")
 	InitCmd.Flags().BoolVarP(&force, "force", "q", force, "If specified, will automatically reinitialize cluster")
-	InitCmd.Flags().BoolVarP(&monitoring, "monitoring", "m", monitoring, "If specified, install kube prometheus + grafana stack")
+	InitCmd.Flags().BoolVarP(&monitoring, "monitoring", "m", monitoring, "If specified, install prometheus + grafana stack")
+	InitCmd.Flags().BoolVarP(&elasticsearch, "elasticsearch", "e", elasticsearch, "If specified, install elasticsearch operator")
 }
 
 func runInit(cmd *cobra.Command, args []string) {
@@ -59,6 +61,14 @@ func runInit(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting current context: %v\n", err)
 		return
+	}
+
+	if !monitoring {
+		totalOps -= 2
+	}
+
+	if !elasticsearch {
+		totalOps -= 2
 	}
 	contextsStringMap := viper.GetStringMapString("contexts")
 
@@ -172,9 +182,20 @@ func runInit(cmd *cobra.Command, args []string) {
 			}
 			// handler error?...
 		}
+		flinkValues := map[string]interface{}{
+			"defaultConfiguration": map[string]interface{}{
+				"create": true,
+				"append": true,
+				"flink-conf.yaml": `
+              kubernetes.operator.metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+              kubernetes.operator.metrics.reporter.prom.port: 9999
+              metrics.port: 9999
+            `,
+			},
+		}
 
 		fmt.Println("\ninstalling flink operator")
-		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion, flinkNamespace, &map[string]interface{}{})
+		helmPackage := utils.InstallHelmPackage("flink-kubernetes-operator", "", fmt.Sprintf("https://downloads.apache.org/flink/flink-kubernetes-operator-%s/", FlinkVersion), FlinkVersion, flinkNamespace, &flinkValues)
 
 		progChan := make(chan types.ProgCount)
 		go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
@@ -231,7 +252,7 @@ func runInit(cmd *cobra.Command, args []string) {
 
 		fmt.Println("\ninstalling monitoring stack")
 		values := types.GetKubePrometheusValues(node_endpoints)
-		monitoringhelmPackage := utils.InstallHelmPackage("kube-prometheus-stack", "https://prometheus-community.github.io/helm-charts", "", namespace, values)
+		monitoringhelmPackage := utils.InstallHelmPackage("kube-prometheus-stack", "", "https://prometheus-community.github.io/helm-charts", "", namespace, values)
 
 		progChan = make(chan types.ProgCount)
 		go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
@@ -247,6 +268,44 @@ func runInit(cmd *cobra.Command, args []string) {
 			Name: "kube-prometheus-stack",
 		}
 		Profile.Packages = append(Profile.Packages, monitoringhelmPackage)
+
+	}
+
+	if elasticsearch {
+		fmt.Println("installing Elasticsearch")
+
+		if err := objects.CreateObject("https://download.elastic.co/downloads/eck/2.14.0/crds.yaml"); err != nil {
+			fmt.Printf("could not install elastic search crds: \n%s\n", err)
+			return
+		}
+		progChan := make(chan types.ProgCount)
+		go objects.HandleResources("CustomResourceDefinition", "", "Established", progChan)
+		utils.DisplayProgress(progChan, "deploying elasticsearch crds", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		currentOp += 1
+
+		if err := objects.CreateObject("https://download.elastic.co/downloads/eck/2.14.0/operator.yaml"); err != nil {
+			fmt.Printf("could not install elastic operator: \n%s\n", err)
+			return
+		}
+		progChan = make(chan types.ProgCount)
+		go objects.HandleResources("Pod", "elastic-system", "Ready", progChan)
+		utils.DisplayProgress(progChan, "deploying elastic search operator", fmt.Sprintf("%d/%d", currentOp, totalOps))
+		currentOp += 1
+
+		Profile.Packages = append(Profile.Packages, types.Package{
+			Name:    "elasticsearch",
+			Url:     "https://download.elastic.co/downloads/eck/2.14.0/operator.yaml",
+			Type:    "k8s",
+			Version: "2.14.0",
+			Dependencies: []*types.Package{
+				{
+					Name:    "elasticsearch crds",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+			},
+		})
 
 	}
 

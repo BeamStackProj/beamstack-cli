@@ -25,10 +25,15 @@ var (
 
 // infoCmd represents the info command
 var FlinkClusterCmd = &cobra.Command{
-	Use:   "flink",
+	Use:   "flink [Name]",
 	Short: "opens up flink cluster ui",
 	Long:  openFlinkClusterLongDesc,
-	Args:  cobra.ExactArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("command requires exactly one argument: Flink Cluster Name. Provided %d arguments", len(args))
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		LocalPort, err := cmd.Flags().GetUint16("localport")
 		if err != nil {

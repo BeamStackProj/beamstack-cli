@@ -52,8 +52,13 @@ var PipelineCmd = &cobra.Command{
 	Use:   "pipeline [FILE]",
 	Short: "Deploy an Apache Beam pipeline",
 	Long:  deployLongDesc,
-	Args:  cobra.ExactArgs(1),
-	Run:   DeployPipeline,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("pipeline command requires exactly one argument: the FILE to deploy. Provided %d arguments", len(args))
+		}
+		return nil
+	},
+	Run: DeployPipeline,
 }
 
 func init() {
@@ -63,6 +68,8 @@ func init() {
 	PipelineCmd.Flags().Uint8Var(&Parallelism, "parallelism", Parallelism, "Set the pipeline parallelism.")
 	PipelineCmd.Flags().BoolVarP(&Wait, "wait", "w", Wait, "Wait for the pipeline to complete.")
 	PipelineCmd.Flags().BoolVarP(&Migrate, "migrate", "m", Migrate, "Migrate data to the Kubernetes cluster. This is necessary if the pipeline is to be run on local data. Pipeline Results will also be migrated to local system if wait is true.")
+
+	PipelineCmd.MarkFlagRequired("flink")
 }
 
 func DeployPipeline(cmd *cobra.Command, args []string) {
@@ -282,8 +289,9 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 						RestartPolicy: "Never",
 						Containers: []v1.Container{
 							{
-								Name:    "beam-pipeline",
-								Image:   "beamstackproj/beam-harness-v1_16:latest",
+								Name:  "beam-pipeline",
+								Image: "beamstackproj/beam-harness-v1_16:latest",
+								// Image:   "localhost:5000/docker-ext-v1:latest",
 								Command: []string{"python"},
 								Args: []string{
 									"-m",
