@@ -10,7 +10,7 @@ import (
 // infoCmd represents the info command
 var CreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "'create' sub commands",
+	Short: "create a resource",
 	Long:  `create flink or spark clusters`,
 }
 

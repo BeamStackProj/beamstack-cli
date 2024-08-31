@@ -21,7 +21,7 @@ var (
 // infoCmd represents the info command
 var InfoCmd = &cobra.Command{
 	Use:   "info",
-	Short: "Pallete that contains information based commands",
+	Short: "get cluster info",
 	Long:  infoLongDesc,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, err := utils.GetCurrentContext()
