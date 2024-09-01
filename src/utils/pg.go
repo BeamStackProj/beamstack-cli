@@ -29,7 +29,6 @@ func ProgressBar(taskDesc string, taskCount string, max int) *progressbar.Progre
 
 func DisplayProgress(progChan chan types.ProgCount, taskDesc string, taskCount string) {
 	var bar *progressbar.ProgressBar
-	fmt.Printf("starting prog chan for: %v", taskDesc)
 	for i := range progChan {
 		if i.OnInit {
 			if i.Count == 1 {

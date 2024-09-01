@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"golang.org/x/term"
+
 	"github.com/BeamStackProj/beamstack-cli/src/objects"
 	"github.com/BeamStackProj/beamstack-cli/src/types"
 	"github.com/BeamStackProj/beamstack-cli/src/utils"
@@ -39,6 +41,7 @@ var (
 	force           bool = false
 	totalOps        int  = 8
 	currentOp       int  = 1
+	fd              int  = int(os.Stdin.Fd())
 )
 
 func init() {
@@ -177,10 +180,8 @@ func runInit(cmd *cobra.Command, args []string) {
 		flinkNamespace := "flink"
 
 		if err := objects.CreateNamespace(flinkNamespace); err != nil {
-			if err != os.ErrExist {
-				fmt.Println(err)
-			}
 			// handler error?...
+			_ = fmt.Sprintf("%s", err)
 		}
 		flinkValues := map[string]interface{}{
 			"defaultConfiguration": map[string]interface{}{
@@ -213,11 +214,7 @@ func runInit(cmd *cobra.Command, args []string) {
 	if monitoring {
 		var namespace string = "monitoring"
 		if err := objects.CreateNamespace(namespace); err != nil {
-			if err != os.ErrExist {
-				fmt.Println(err)
-			}
-			// handler error?...
-
+			_ = fmt.Sprintf("%s", err)
 		}
 		node_endpoints, err := utils.GetNodeEndpoints()
 		if err != nil {
@@ -235,19 +232,24 @@ func runInit(cmd *cobra.Command, args []string) {
 		}
 
 		fmt.Print("please set your admin password for grafana: ")
-		var grafanaPassword string
-		_, err = fmt.Scanln(&grafanaPassword)
+		grafanaPassword, err := term.ReadPassword(fd)
+		if err != nil {
+			fmt.Println("Error reading password:", err)
+			return
+		}
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
 			return
 		}
 		var secretData = map[string][]byte{
 			"admin-user":     []byte(grafanaUser),
-			"admin-password": []byte(grafanaPassword),
+			"admin-password": []byte(string(grafanaPassword)),
 		}
 		if err := objects.CreateSecret("grafana-admin-credentials", namespace, secretData); err != nil {
-			fmt.Println(err)
+			// fmt.Println(err)
 			// handler error
+			_ = fmt.Sprintf("%s", err)
 		}
 
 		fmt.Println("\ninstalling monitoring stack")
@@ -299,7 +301,61 @@ func runInit(cmd *cobra.Command, args []string) {
 			Version: "2.14.0",
 			Dependencies: []*types.Package{
 				{
-					Name:    "elasticsearch crds",
+					Name:    "crds/agents.agent.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/apmservers.apm.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/beats.beat.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/elasticmapsservers.maps.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/elasticsearchautoscalers.autoscaling.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/elasticsearches.elasticsearch.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/enterprisesearches.enterprisesearch.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/kibanas.kibana.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/logstashes.logstash.k8s.elastic.co",
+					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
+					Type:    "k8s",
+					Version: "2.14.0",
+				},
+				{
+					Name:    "crds/stackconfigpolicies.stackconfigpolicy.k8s.elastic.co",
 					Url:     "https://download.elastic.co/downloads/eck/2.14.0/crds.yaml",
 					Type:    "k8s",
 					Version: "2.14.0",
