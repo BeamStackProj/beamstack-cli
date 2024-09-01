@@ -27,6 +27,15 @@ var InitCmd = &cobra.Command{
 	Run:   runInit,
 }
 
+var Banner string = `
+ ______                                                   _    
+(____  \                               _                 | |    
+ ____)  ) _____  _____  ____    ___  _| |_  _____   ____ | |  _ 
+|  __  ( | ___ |(____ ||    \  /___)(_   _)(____ | / ___)| |_/ )
+| |__)  )| ____|/ ___ || | | ||___ |  | |_ / ___ |( (___ |  _ ( 
+|______/ |_____)\_____||_|_|_|(___/    \__)\_____| \____)|_| \_)                                                                
+`
+
 var (
 	ConfigFile      string = ""
 	Name            string = ""
@@ -59,7 +68,9 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) {
-	fmt.Println("Initializing cluster ! !")
+	// fmt.Println("Initializing cluster ! !")
+	// out, _ := glamour.Render(fmt.Sprintf("# %s", Banner), "dark")
+	fmt.Print(Banner)
 	currentContext, err := utils.GetCurrentContext()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting current context: %v\n", err)
