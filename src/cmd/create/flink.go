@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	cpu         string = "4"
-	memory      string = "2048Mi"
-	cpuLimit    string = "4"
+	cpu         string = "500m"
+	memory      string = "1024Mi"
+	cpuLimit    string = "1"
 	memoryLimit string = "2048Mi"
 	volumeSize  string = "1Gi"
-	taskslots   uint8  = 10
+	taskslots   uint8  = 1
 	replicas    uint8  = 1
 	Previledged bool   = false
 )
@@ -104,15 +104,19 @@ var FlinkClusterCmd = &cobra.Command{
 				JobManager: types.JobManagerSpec{
 					Replicas: 1,
 					Resource: types.Resource{
-						Memory: memory,
-						CPU:    cpu,
+						Memory:      memory,
+						CPU:         cpu,
+						CPULimit:    cpuLimit,
+						MemoryLimit: memoryLimit,
 					},
 				},
 				TaskManager: types.TaskManagerSpec{
 					Replicas: replicas,
 					Resource: types.Resource{
-						Memory: memory,
-						CPU:    cpu,
+						Memory:      memory,
+						CPU:         cpu,
+						CPULimit:    cpuLimit,
+						MemoryLimit: memoryLimit,
 					},
 
 					PodTemplate: &v1.PodTemplateSpec{
@@ -207,15 +211,19 @@ var FlinkClusterCmd = &cobra.Command{
 				JobManager: types.JobManagerSpec{
 					Replicas: 1,
 					Resource: types.Resource{
-						Memory: memory,
-						CPU:    cpu,
+						Memory:      memory,
+						CPU:         cpu,
+						CPULimit:    cpuLimit,
+						MemoryLimit: memoryLimit,
 					},
 				},
 				TaskManager: types.TaskManagerSpec{
 					Replicas: replicas,
 					Resource: types.Resource{
-						Memory: memory,
-						CPU:    cpu,
+						Memory:      memory,
+						CPU:         cpu,
+						CPULimit:    cpuLimit,
+						MemoryLimit: memoryLimit,
 					},
 
 					PodTemplate: &v1.PodTemplateSpec{

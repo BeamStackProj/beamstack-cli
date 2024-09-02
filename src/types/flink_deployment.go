@@ -30,8 +30,10 @@ type TaskManagerSpec struct {
 }
 
 type Resource struct {
-	Memory string `yaml:"memory"`
-	CPU    string `yaml:"cpu"`
+	Memory      string `yaml:"memory"`
+	CPU         string `yaml:"cpu"`
+	CPULimit    string `yaml:"cpuLimit"`
+	MemoryLimit string `yaml:"cpuLimit"`
 }
 
 type JobSpec struct {

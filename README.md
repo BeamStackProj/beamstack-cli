@@ -92,17 +92,16 @@ minikube delete && minikube start \
     --extra-config=controller-manager.bind-address=0.0.0.0
 ``` 
 
-### 3. Clone beamstack-cli repository:
+### 3. download the helper scrip:
    
 ```bash
-git clone https://github.com/BeamStackProj/beamstack-cli.git
+wget https://raw.githubusercontent.com/BeamStackProj/beamstack-cli/main/get-beamstack.sh
 ```  
 
-### 4. Install beamstack-cli:  
+### 4. Install beamstack-cli:
   
 ```bash
-cd beamstack-cli
-make install
+sh get-beamstack.sh
 ```
 
 ---
@@ -110,10 +109,30 @@ make install
 ### 5. Verify beamstack installation:  
   
 ```bash
-beamstack --help
+beamstack
 ```
 
 ---
+
+## **Initializing your kubernetes cluster** 
+
+To configure your Kubernetes cluster for running Beam YAML pipelines and accessing other BeamStack commands, use the `init` command in BeamStack.
+
+- Step 1: View Available Flags
+Start by viewing the available flags and options for the init command:
+
+```bash
+beamstack init --help
+```
+
+ - Step 2: Initialize BeamStack with Your Desired Configuration
+Once you've reviewed the options, initialize BeamStack with the configuration that suits your needs:
+
+```bash
+beamstack init -me
+```
+---
+
 
 ## **Components of Beamstack** 
 
