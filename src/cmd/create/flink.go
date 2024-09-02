@@ -15,9 +15,9 @@ import (
 
 var (
 	cpu         string = "500m"
-	memory      string = "1024Mi"
+	memory      string = "2048Mi"
 	cpuLimit    string = "1"
-	memoryLimit string = "2048Mi"
+	memoryLimit string = "4096Mi"
 	volumeSize  string = "1Gi"
 	taskslots   uint8  = 1
 	replicas    uint8  = 1
