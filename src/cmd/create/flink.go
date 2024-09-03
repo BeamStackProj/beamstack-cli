@@ -15,9 +15,9 @@ import (
 
 var (
 	cpu         string = "500m"
-	memory      string = "2048Mi"
+	memory      string = "1Gi"
 	cpuLimit    string = "1"
-	memoryLimit string = "4096Mi"
+	memoryLimit string = "2Gi"
 	volumeSize  string = "1Gi"
 	taskslots   uint8  = 1
 	replicas    uint8  = 1
@@ -55,7 +55,8 @@ var FlinkClusterCmd = &cobra.Command{
 		}
 		namespace := "flink"
 
-		flinkVersion := "v1_16"
+		flinkVersion := "1.16"
+		flinkVersionLong := "v1_16"
 		ClaimName := fmt.Sprintf("%s-pvc", args[0])
 		fmt.Printf("creating flink cluster %s\n", args[0])
 
@@ -73,15 +74,16 @@ var FlinkClusterCmd = &cobra.Command{
 		}
 
 		var spec types.FlinkDeploymentSpec
-		taskmanagerImage := fmt.Sprintf("beamstackproj/beam-harness-%s:latest", flinkVersion)
+		workerImage := "beamstackproj/beam-harness:latest"
 
 		if Previledged {
-			flinkImage := fmt.Sprintf("beamstackproj/flink-%s-docker:latest", flinkVersion)
+			// flinkImage := fmt.Sprintf("beamstackproj/flink-%s-docker:latest", flinkVersion)
+			flinkImage := fmt.Sprintf("flink:%s", flinkVersion)
 
 			spec = types.FlinkDeploymentSpec{
 				Image:           &flinkImage,
 				ImagePullPolicy: "IfNotPresent",
-				FlinkVersion:    flinkVersion,
+				FlinkVersion:    flinkVersionLong,
 				FlinkConfiguration: map[string]string{
 					"taskmanager.numberOfTaskSlots": fmt.Sprintf("%d", taskslots),
 				},
@@ -124,7 +126,7 @@ var FlinkClusterCmd = &cobra.Command{
 							Containers: []v1.Container{
 								{
 									Name:  "worker",
-									Image: taskmanagerImage,
+									Image: workerImage,
 									Args:  []string{"-worker_pool"},
 									Ports: []v1.ContainerPort{
 										{
@@ -179,11 +181,12 @@ var FlinkClusterCmd = &cobra.Command{
 				},
 			}
 		} else {
-			flinkImage := fmt.Sprintf("beamstackproj/flink-%s:latest", flinkVersion)
+			flinkImage := fmt.Sprintf("beamstackproj/flink-%s:latest", flinkVersionLong)
+			// flinkImage := fmt.Sprintf("flink:%s", flinkVersion)
 			spec = types.FlinkDeploymentSpec{
 				Image:           &flinkImage,
 				ImagePullPolicy: "IfNotPresent",
-				FlinkVersion:    flinkVersion,
+				FlinkVersion:    flinkVersionLong,
 				FlinkConfiguration: map[string]string{
 					"taskmanager.numberOfTaskSlots": fmt.Sprintf("%d", taskslots),
 				},
@@ -231,7 +234,7 @@ var FlinkClusterCmd = &cobra.Command{
 							Containers: []v1.Container{
 								{
 									Name:  "worker",
-									Image: taskmanagerImage,
+									Image: workerImage,
 									Args:  []string{"-worker_pool"},
 									Ports: []v1.ContainerPort{
 										{
@@ -294,5 +297,8 @@ func init() {
 	FlinkClusterCmd.Flags().Uint8Var(&replicas, "replicas", replicas, "numbers of replicas sets for task manager")
 	FlinkClusterCmd.Flags().Uint8Var(&taskslots, "taskslots", taskslots, "numbers of taskslots to be created for the task manager")
 	FlinkClusterCmd.Flags().StringVar(&volumeSize, "volumeSize", volumeSize, "size of persistent volume to be attached to flink cluster")
-	FlinkClusterCmd.Flags().BoolVar(&Previledged, "Previledged", Previledged, "")
+	FlinkClusterCmd.Flags().BoolVarP(&Previledged, "previledged", "p", Previledged, "")
 }
+
+// export ELASTIC_PASSWORD="admin"
+// export KIBANA_PASSWORD="kibana-pass"

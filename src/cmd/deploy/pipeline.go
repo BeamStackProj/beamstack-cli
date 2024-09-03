@@ -290,8 +290,7 @@ func DeployPipeline(cmd *cobra.Command, args []string) {
 						Containers: []v1.Container{
 							{
 								Name:  "beam-pipeline",
-								Image: "beamstackproj/beam-harness-v1_16:latest",
-								// Image:   "localhost:5000/docker-ext-v1:latest",
+								Image: "beamstackproj/beam-harness:latest",
 								Command: []string{"python"},
 								Args: []string{
 									"-m",

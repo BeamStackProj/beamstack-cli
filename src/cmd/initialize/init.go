@@ -33,7 +33,8 @@ var Banner string = `
  ____)  ) _____  _____  ____    ___  _| |_  _____   ____ | |  _ 
 |  __  ( | ___ |(____ ||    \  /___)(_   _)(____ | / ___)| |_/ )
 | |__)  )| ____|/ ___ || | | ||___ |  | |_ / ___ |( (___ |  _ ( 
-|______/ |_____)\_____||_|_|_|(___/    \__)\_____| \____)|_| \_)                                                                
+|______/ |_____)\_____||_|_|_|(___/    \__)\_____| \____)|_| \_)      
+
 `
 
 var (
@@ -58,8 +59,8 @@ func init() {
 	InitCmd.Flags().StringVarP(&Name, "name", "n", Name, "Name of profile. will be randomly generated if not provided.")
 	InitCmd.Flags().StringVarP(&ConfigFile, "config", "c", ConfigFile, "Path to configuration file.")
 	InitCmd.Flags().StringVarP(&DefaultOperator, "default-operator", "d", DefaultOperator, "Default operator.")
-	InitCmd.Flags().StringVarP(&FlinkVersion, "flink-version", "f", FlinkVersion, "Flink version to be installed. Ignored if Flink is not specified for installation.")
-	InitCmd.Flags().StringVarP(&SparkVersion, "spark-version", "s", SparkVersion, "Spark Version to be installed. Ignored if Spark is not specified for installation.")
+	InitCmd.Flags().StringVarP(&FlinkVersion, "flink-version", "f", FlinkVersion, "Flink kubernetes operator version to be installed. Ignored if Flink is not specified for installation.")
+	InitCmd.Flags().StringVarP(&SparkVersion, "spark-version", "s", SparkVersion, "Spark kubernetes operator Version to be installed. Ignored if Spark is not specified for installation.")
 	InitCmd.Flags().BoolVarP(&Flink, "flink", "F", Flink, "If specified, flink is installed.")
 	InitCmd.Flags().BoolVarP(&Spark, "spark", "S", Spark, "If specified, Spark is installed.")
 	InitCmd.Flags().BoolVarP(&force, "force", "q", force, "If specified, will automatically reinitialize cluster")
@@ -68,8 +69,6 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) {
-	// fmt.Println("Initializing cluster ! !")
-	// out, _ := glamour.Render(fmt.Sprintf("# %s", Banner), "dark")
 	fmt.Print(Banner)
 	currentContext, err := utils.GetCurrentContext()
 	if err != nil {

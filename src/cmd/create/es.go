@@ -17,6 +17,7 @@ var (
 
 	ElasticSearchVersion string = "8.15.0"
 	Nodes                uint16 = 1
+	esNamespace          string = "default"
 )
 
 // infoCmd represents the info command
@@ -38,8 +39,8 @@ var ElasticSearchCmd = &cobra.Command{
 				{
 					Name:  args[0],
 					Count: Nodes,
-					Config: types.EsNodeConfig{
-						NodeStoreAllowMMAP: false,
+					Config: map[string]interface{}{
+						"node.store.allow_mmap": false,
 					},
 				},
 			},
@@ -51,8 +52,8 @@ var ElasticSearchCmd = &cobra.Command{
 				Kind:       "Elasticsearch",
 			},
 			metav1.ObjectMeta{
-				Name:      "default",
-				Namespace: "elastic-system",
+				Name:      args[0],
+				Namespace: esNamespace,
 			},
 			spec,
 			"elasticsearches",
@@ -62,12 +63,13 @@ var ElasticSearchCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 		fmt.Println("Elastic search created")
-		fmt.Printf("incluster url: http://%s.default.svc.cluster.local:9200 \n", args[0])
-		fmt.Printf("Es Password can be retrieved using kubectl \n kubectl get secret %s-es-elastic-user -o go-template='{{.data.elastic | base64decode}}'\n", args[0])
+		fmt.Printf("incluster url: http://%s-es-http.default.svc.cluster.local:9200 \n", args[0])
+		fmt.Printf("Elasticsearch Password can be retrieved using kubectl \n kubectl get secret %s-es-elastic-user -n %s -o go-template='{{.data.elastic | base64decode}}'\n", args[0], esNamespace)
 	},
 }
 
 func init() {
 	ElasticSearchCmd.Flags().StringVar(&ElasticSearchVersion, "version", ElasticSearchVersion, "elastic search version")
 	ElasticSearchCmd.Flags().Uint16Var(&Nodes, "nodes", Nodes, "number of elastic search Nodes")
+	ElasticSearchCmd.Flags().StringVar(&esNamespace, "namespace", esNamespace, "namespace to deploy create elasticsearch cluster on")
 }
