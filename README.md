@@ -10,11 +10,11 @@
 
 <p align="center">
   <br>
-  <a href="https://beamstackproj.github.io/website/docs/" rel="nofollow"><strong>Explore Beamstack Documentation »</strong></a>
+  <a href="https://beamstackproj.github.io/docs/" rel="nofollow"><strong>Explore Beamstack Documentation »</strong></a>
   <br>
-  <a href="https://beamstackproj.github.io/website/docs/about/community/"><strong>Join Beamstack Community »</strong></a>
+  <a href="https://beamstackproj.github.io/docs/about/community/"><strong>Join Beamstack Community »</strong></a>
   <br>
-  <a href="https://beamstackproj.github.io/website/blog/"><strong>Explore Blogs »</strong></a>
+  <a href="https://beamstackproj.github.io/blog/"><strong>Explore Blogs »</strong></a>
   <br>
   <a href="https://discord.gg/fYNnNVaEFK"><strong>Join Discord Channel</strong></a>
 </p>
@@ -155,10 +155,10 @@ beamstack init -me
 ### :busts_in_silhouette: Community
  
 Get updates on Beamstack's development and chat with project maintainers, contributors, and community members  
-- Visit the [Community Page](https://beamstackproj.github.io/website/docs/about/community/)
+- Visit the [Community Page](https://beamstackproj.github.io/docs/about/community/)
 - Raise feature requests, suggest enhancements, and report bugs in our [GitHub Issues](https://github.com/BeamStackProj/beamstack-cli/issues)
-- Articles, How-Tos, Tutorials - [Beamstack Blogs](https://beamstackproj.github.io/website/blog/)
+- Articles, How-Tos, Tutorials - [Beamstack Blogs](https://beamstackproj.github.io/blog/)
 
 ### :handshake: Contribute
  
-Take a look at our [contributing guidelines](https://beamstackproj.github.io/website/docs/about/contributing/) for information on how to open issues, adhere to coding standards, and understand our development processes. We greatly value your contribution.
+Take a look at our [contributing guidelines](https://beamstackproj.github.io/docs/about/contributing/) for information on how to open issues, adhere to coding standards, and understand our development processes. We greatly value your contribution.
