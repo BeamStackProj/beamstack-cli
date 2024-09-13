@@ -22,14 +22,11 @@ jobs:
               with:
                   go-version: stable
 
-            - name: Install GoReleaser
+            - name: Run GoReleaser
               uses: goreleaser/goreleaser-action@v6
               with:
                   distribution: goreleaser
                   version: "~> v2"
-
-            - name: Run GoReleaser
-              run: goreleaser release --clean
+                  args: help
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              working-directory: /src
