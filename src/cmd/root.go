@@ -37,6 +37,7 @@ func addSubCommandPallets() {
 	rootCmd.AddCommand(deploy.DeployCmd)
 	rootCmd.AddCommand(info.InfoCmd)
 	rootCmd.AddCommand(open.OpenCmd)
+	rootCmd.AddCommand(VersionCmd)
 }
 
 func init() {
