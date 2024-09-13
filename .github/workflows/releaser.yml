@@ -27,10 +27,7 @@ jobs:
               with:
                   distribution: goreleaser
                   version: "~> v2"
-                  args: help
-
-            - name: Run GoReleaser
-              working-directory: /src
-              run: goreleaser release --clean
+                  args: release --clean
+                  workdir: src
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
